@@ -25,7 +25,6 @@ const profileFormSchema = z.object({
     .min(2, 'Name must be at least 2 characters.')
     .max(50, 'Name must not be longer than 50 characters.'),
   email: z.string().email('Please enter a valid email address.'),
-  phone: z.string().max(20, 'Phone number too long.').optional().or(z.literal('')),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
@@ -40,7 +39,6 @@ export function ProfileForm() {
     defaultValues: {
       name: auth.user?.name || '',
       email: auth.user?.email || '',
-      phone: auth.user?.phone || '',
     },
   })
 
@@ -56,7 +54,6 @@ export function ProfileForm() {
           form.reset({
             name: res.data.admin.name || '',
             email: res.data.admin.email || '',
-            phone: res.data.admin.phone || '',
           })
         }
       } catch (err: unknown) {
@@ -82,7 +79,6 @@ export function ProfileForm() {
       const res = await adminAuthService.updateProfile({
         name: data.name,
         email: data.email,
-        phone: data.phone || null,
       })
 
       if (res.status && res.data?.admin) {
@@ -136,27 +132,6 @@ export function ProfileForm() {
               </FormControl>
               <FormDescription>
                 The email address used to log in to the admin account.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name='phone'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone Number</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder='+1 (555) 000-0000'
-                  disabled={isLoading || isFetching}
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Optional contact phone number.
               </FormDescription>
               <FormMessage />
             </FormItem>
