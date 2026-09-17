@@ -287,15 +287,12 @@ export function GalleryCategories() {
                   <TableRow key={item.id} className='hover:bg-muted/40'>
                     {/* S.No */}
                     <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
-                      #{(currentPage - 1) * perPage + index + 1}
+                      {(currentPage - 1) * perPage + index + 1}
                     </TableCell>
 
                     {/* Category Name */}
                     <TableCell className='py-3 font-semibold text-sm'>
-                      <div className='flex items-center gap-2'>
-                        <span className='size-2 rounded-full bg-primary/80' />
-                        {item.name}
-                      </div>
+                      {item.name}
                     </TableCell>
 
                     {/* Slug */}

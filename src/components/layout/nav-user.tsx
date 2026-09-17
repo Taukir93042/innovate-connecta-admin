@@ -97,7 +97,7 @@ export function NavUser({ user }: NavUserProps) {
                 <DropdownMenuItem asChild>
                   <Link to='/settings/account'>
                     <BadgeCheck className='size-4' />
-                    Account Security
+                    Account Setting
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>

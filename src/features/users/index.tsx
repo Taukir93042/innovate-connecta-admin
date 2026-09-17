@@ -205,7 +205,7 @@ export function Users() {
                   <TableRow key={item.id} className='hover:bg-muted/40'>
                     {/* S.No */}
                     <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
-                      #{index + 1}
+                      {index + 1}
                     </TableCell>
 
                     {/* Name */}

@@ -5,11 +5,9 @@ import {
   Search as SearchIcon,
   Trash2,
   Edit2,
-  Sparkles,
   Loader2,
   Calendar,
   Eye,
-  Layers,
   Image as ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -41,7 +39,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Select,
   SelectContent,
@@ -49,6 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PaginationBar } from '@/components/pagination-bar'
 
 export function Sessions() {
@@ -58,7 +56,6 @@ export function Sessions() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [filterFeaturedOnly, setFilterFeaturedOnly] = useState(false)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -87,7 +84,6 @@ export function Sessions() {
       const res = await adminSessionService.getSessions({
         search: searchQuery || undefined,
         category: selectedCategory !== 'all' ? selectedCategory : undefined,
-        is_featured: filterFeaturedOnly ? true : undefined,
         page,
         per_page: currentPerPage,
       })
@@ -115,7 +111,7 @@ export function Sessions() {
 
   useEffect(() => {
     fetchSessions(currentPage, perPage)
-  }, [currentPage, perPage, selectedCategory, filterFeaturedOnly])
+  }, [currentPage, perPage, selectedCategory])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,20 +129,6 @@ export function Sessions() {
         prev.map((s) => (s.id === item.id ? { ...s, is_active: !s.is_active } : s))
       )
       toast.success(`Session ${!item.is_active ? 'activated' : 'deactivated'} successfully.`)
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err))
-    }
-  }
-
-  const handleToggleFeatured = async (item: SessionItem) => {
-    try {
-      await adminSessionService.toggleFeatured(item.id)
-      setSessions((prev) =>
-        prev.map((s) => (s.id === item.id ? { ...s, is_featured: !s.is_featured } : s))
-      )
-      toast.success(
-        `Session ${!item.is_featured ? 'marked as featured' : 'unmarked from featured'}.`
-      )
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
     }
@@ -199,27 +181,14 @@ export function Sessions() {
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div className='flex flex-wrap items-center gap-2'>
             <Button
-              variant={selectedCategory === 'all' && !filterFeaturedOnly ? 'default' : 'outline'}
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
               size='sm'
               onClick={() => {
                 setSelectedCategory('all')
-                setFilterFeaturedOnly(false)
                 setCurrentPage(1)
               }}
             >
               All Sessions
-            </Button>
-            <Button
-              variant={filterFeaturedOnly ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => {
-                setFilterFeaturedOnly(!filterFeaturedOnly)
-                setCurrentPage(1)
-              }}
-              className='gap-1.5'
-            >
-              <Sparkles className='h-3.5 w-3.5 text-amber-500' />
-              Featured
             </Button>
 
             <Select
@@ -292,8 +261,6 @@ export function Sessions() {
                   <TableHead className='w-[70px]'>S.No</TableHead>
                   <TableHead className='min-w-[240px]'>Session Title</TableHead>
                   <TableHead className='w-[140px]'>Category</TableHead>
-                  <TableHead className='w-[130px]'>Highlights</TableHead>
-                  <TableHead className='w-[120px]'>Featured</TableHead>
                   <TableHead className='w-[130px]'>Status</TableHead>
                   <TableHead className='w-[120px] text-end'>Actions</TableHead>
                 </TableRow>
@@ -305,13 +272,11 @@ export function Sessions() {
                     (item.images?.[0]?.image ? getStorageUrl(item.images[0].image) : null) ||
                     item.image_url
 
-                  const cardCount = Array.isArray(item.info_cards) ? item.info_cards.length : 0
-
                   return (
                     <TableRow key={item.id} className='hover:bg-muted/40'>
                       {/* S.No */}
                       <TableCell className='py-3 font-medium text-muted-foreground'>
-                        #{(currentPage - 1) * perPage + index + 1}
+                        {(currentPage - 1) * perPage + index + 1}
                       </TableCell>
 
                       {/* Session Title & Cover */}
@@ -344,40 +309,6 @@ export function Sessions() {
                         <Badge variant='outline' className='font-normal text-xs'>
                           {getCategoryName(item.category)}
                         </Badge>
-                      </TableCell>
-
-                      {/* Highlights / Info cards */}
-                      <TableCell className='py-3'>
-                        {cardCount > 0 ? (
-                          <Badge variant='secondary' className='text-xs font-normal gap-1'>
-                            <Layers className='h-3 w-3 text-muted-foreground' />
-                            {cardCount} {cardCount === 1 ? 'Card' : 'Cards'}
-                          </Badge>
-                        ) : (
-                          <span className='text-xs text-muted-foreground italic'>None</span>
-                        )}
-                      </TableCell>
-
-                      {/* Featured */}
-                      <TableCell className='py-3'>
-                        <Button
-                          variant={item.is_featured ? 'secondary' : 'ghost'}
-                          size='sm'
-                          className={`h-7 text-xs px-2 gap-1 rounded-full ${
-                            item.is_featured
-                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                          onClick={() => handleToggleFeatured(item)}
-                          title='Toggle featured on home page'
-                        >
-                          <Sparkles
-                            className={`h-3 w-3 ${
-                              item.is_featured ? 'text-amber-500 fill-amber-500' : ''
-                            }`}
-                          />
-                          {item.is_featured ? 'Featured' : 'Regular'}
-                        </Button>
                       </TableCell>
 
                       {/* Status */}

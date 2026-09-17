@@ -209,7 +209,6 @@ export function Contacts() {
                   <TableHead className='w-[150px]'>Phone</TableHead>
                   <TableHead className='w-[160px]'>Subject</TableHead>
                   <TableHead className='min-w-[220px]'>Message</TableHead>
-                  <TableHead className='w-[110px]'>Status</TableHead>
                   <TableHead className='w-[120px]'>Date</TableHead>
                   <TableHead className='w-[90px] text-end'>Actions</TableHead>
                 </TableRow>
@@ -281,20 +280,6 @@ export function Contacts() {
                       >
                         {item.message || '—'}
                       </div>
-                    </TableCell>
-
-                    {/* Status Badge */}
-                    <TableCell className='py-3'>
-                      <Badge
-                        variant={item.is_read ? 'secondary' : 'default'}
-                        className={
-                          item.is_read
-                            ? 'text-muted-foreground text-[11px]'
-                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                        }
-                      >
-                        {item.is_read ? 'Read' : 'New'}
-                      </Badge>
                     </TableCell>
 
                     {/* Date */}
