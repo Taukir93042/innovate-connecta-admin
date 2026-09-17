@@ -58,7 +58,7 @@ export function ProfileDropdown() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to='/settings/account'>
-                Account Security
+                Account Setting
                 <DropdownMenuShortcut>⇧⌘S</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>

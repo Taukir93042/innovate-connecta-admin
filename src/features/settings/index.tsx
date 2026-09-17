@@ -1,7 +1,6 @@
 import { Outlet } from '@tanstack/react-router'
 import { Wrench, UserCog } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -16,7 +15,7 @@ const sidebarNavItems = [
     icon: <UserCog size={18} />,
   },
   {
-    title: 'Account Security',
+    title: 'Account Setting',
     href: '/settings/account',
     icon: <Wrench size={18} />,
   },
@@ -29,7 +28,6 @@ export function Settings() {
       <Header>
         <Search className='me-auto' />
         <ThemeSwitch />
-        <ConfigDrawer />
         <ProfileDropdown />
       </Header>
 
@@ -39,7 +37,7 @@ export function Settings() {
             Settings
           </h1>
           <p className='text-muted-foreground'>
-            Manage your admin profile and account security settings.
+            Manage your admin profile and account settings.
           </p>
         </div>
         <Separator className='my-4 lg:my-6' />

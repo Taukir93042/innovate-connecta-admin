@@ -60,7 +60,6 @@ export function Testimonials() {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterFeaturedOnly, setFilterFeaturedOnly] = useState(false)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -95,7 +94,6 @@ export function Testimonials() {
       setIsLoading(true)
       const res = await adminTestimonialService.getTestimonials({
         search: searchQuery || undefined,
-        is_featured: filterFeaturedOnly ? true : undefined,
         page,
         per_page: currentPerPage,
       })
@@ -119,7 +117,7 @@ export function Testimonials() {
 
   useEffect(() => {
     fetchTestimonials(currentPage, perPage)
-  }, [currentPage, perPage, filterFeaturedOnly])
+  }, [currentPage, perPage])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -148,7 +146,7 @@ export function Testimonials() {
     setFormName(item.name)
     setFormDesignation(item.designation || '')
     setFormReview(item.review)
-    setFormRating(String(item.rating || 5))
+    setFormRating(item.rating ? String(item.rating) : '5')
     setFormIsFeatured(item.is_featured)
     setFormIsActive(item.is_active)
     setFormAvatarFile(null)
@@ -217,22 +215,6 @@ export function Testimonials() {
     }
   }
 
-  const handleToggleFeatured = async (item: TestimonialItem) => {
-    try {
-      await adminTestimonialService.toggleFeatured(item.id)
-      setTestimonials((prev) =>
-        prev.map((t) =>
-          t.id === item.id ? { ...t, is_featured: !t.is_featured } : t
-        )
-      )
-      toast.success(
-        `Testimonial ${!item.is_featured ? 'marked as featured' : 'unmarked from featured'}.`
-      )
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err))
-    }
-  }
-
   const handleDeleteConfirm = async () => {
     if (!deleteItem) return
     setIsDeleting(true)
@@ -274,25 +256,6 @@ export function Testimonials() {
 
         {/* Filters & Search Bar */}
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant={!filterFeaturedOnly ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => setFilterFeaturedOnly(false)}
-            >
-              All Testimonials
-            </Button>
-            <Button
-              variant={filterFeaturedOnly ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => setFilterFeaturedOnly(true)}
-              className='gap-1.5'
-            >
-              <Sparkles className='h-3.5 w-3.5 text-amber-500' />
-              Featured Only
-            </Button>
-          </div>
-
           <form
             onSubmit={handleSearchSubmit}
             className='flex items-center gap-2 w-full sm:w-72'
@@ -340,7 +303,6 @@ export function Testimonials() {
                   <TableHead className='w-[220px]'>Reviewer</TableHead>
                   <TableHead className='min-w-[280px]'>Review / Feedback</TableHead>
                   <TableHead className='w-[130px]'>Rating</TableHead>
-                  <TableHead className='w-[120px]'>Featured</TableHead>
                   <TableHead className='w-[130px]'>Status</TableHead>
                   <TableHead className='w-[120px] text-end'>Actions</TableHead>
                 </TableRow>
@@ -350,7 +312,7 @@ export function Testimonials() {
                   <TableRow key={item.id} className='hover:bg-muted/40'>
                     {/* S.No */}
                     <TableCell className='py-3 font-medium text-muted-foreground'>
-                      #{(currentPage - 1) * perPage + index + 1}
+                      {(currentPage - 1) * perPage + index + 1}
                     </TableCell>
 
                     {/* Reviewer (Avatar + Name + Role) */}
@@ -408,28 +370,6 @@ export function Testimonials() {
                           />
                         ))}
                       </div>
-                    </TableCell>
-
-                    {/* Featured Toggle & Badge */}
-                    <TableCell className='py-3'>
-                      <Button
-                        variant={item.is_featured ? 'secondary' : 'ghost'}
-                        size='sm'
-                        className={`h-7 text-xs px-2 gap-1 rounded-full ${
-                          item.is_featured
-                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                        onClick={() => handleToggleFeatured(item)}
-                        title='Toggle featured on home page'
-                      >
-                        <Sparkles
-                          className={`h-3 w-3 ${
-                            item.is_featured ? 'text-amber-500 fill-amber-500' : ''
-                          }`}
-                        />
-                        {item.is_featured ? 'Featured' : 'Regular'}
-                      </Button>
                     </TableCell>
 
                     {/* Status & Switch */}

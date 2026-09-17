@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Loader2,
   Mail,
-  Sparkles,
   Calendar,
   Layers,
   BookOpen,
@@ -51,7 +50,6 @@ export function Feedbacks() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterFeaturedOnly, setFilterFeaturedOnly] = useState(false)
 
   // Detail modal state
   const [viewItem, setViewItem] = useState<FeedbackItem | null>(null)
@@ -65,7 +63,6 @@ export function Feedbacks() {
       setIsLoading(true)
       const res = await adminFeedbackService.getFeedbacks({
         search: searchQuery || undefined,
-        is_featured: filterFeaturedOnly ? true : undefined,
         all: true,
       })
       if (res.status && Array.isArray(res.data)) {
@@ -80,7 +77,7 @@ export function Feedbacks() {
 
   useEffect(() => {
     fetchFeedbacks()
-  }, [filterFeaturedOnly])
+  }, [])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,25 +98,6 @@ export function Feedbacks() {
       } catch {
         // silent fail
       }
-    }
-  }
-
-  const handleToggleFeatured = async (item: FeedbackItem) => {
-    try {
-      await adminFeedbackService.toggleFeatured(item.id)
-      setFeedbacks((prev) =>
-        prev.map((f) =>
-          f.id === item.id ? { ...f, is_featured: !f.is_featured } : f
-        )
-      )
-      if (viewItem && viewItem.id === item.id) {
-        setViewItem({ ...viewItem, is_featured: !viewItem.is_featured })
-      }
-      toast.success(
-        `Feedback ${!item.is_featured ? 'marked as featured' : 'unmarked from featured'}.`
-      )
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err))
     }
   }
 
@@ -179,24 +157,13 @@ export function Feedbacks() {
 
         {/* Filters & Search Bar */}
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant={!filterFeaturedOnly ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => setFilterFeaturedOnly(false)}
-            >
-              All Feedbacks
-            </Button>
-            <Button
-              variant={filterFeaturedOnly ? 'default' : 'outline'}
-              size='sm'
-              onClick={() => setFilterFeaturedOnly(true)}
-              className='gap-1.5'
-            >
-              <Sparkles className='h-3.5 w-3.5 text-amber-500' />
-              Featured Only
-            </Button>
-          </div>
+          <Button
+            variant='default'
+            size='sm'
+            onClick={() => fetchFeedbacks()}
+          >
+            All Feedbacks
+          </Button>
 
           <form
             onSubmit={handleSearchSubmit}
@@ -243,7 +210,6 @@ export function Feedbacks() {
                   <TableHead className='min-w-[200px]'>Email</TableHead>
                   <TableHead className='w-[180px]'>Session / Workshop</TableHead>
                   <TableHead className='min-w-[240px]'>Key Takeaways</TableHead>
-                  <TableHead className='w-[120px]'>Featured</TableHead>
                   <TableHead className='w-[130px]'>Date</TableHead>
                   <TableHead className='w-[90px] text-end'>Actions</TableHead>
                 </TableRow>
@@ -301,28 +267,6 @@ export function Feedbacks() {
                       </div>
                     </TableCell>
 
-                    {/* Featured Toggle */}
-                    <TableCell className='py-3'>
-                      <Button
-                        variant={item.is_featured ? 'secondary' : 'ghost'}
-                        size='sm'
-                        className={`h-7 text-xs px-2 gap-1 rounded-full ${
-                          item.is_featured
-                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                        onClick={() => handleToggleFeatured(item)}
-                        title='Toggle featured'
-                      >
-                        <Sparkles
-                          className={`h-3 w-3 ${
-                            item.is_featured ? 'text-amber-500 fill-amber-500' : ''
-                          }`}
-                        />
-                        {item.is_featured ? 'Featured' : 'Regular'}
-                      </Button>
-                    </TableCell>
-
                     {/* Date */}
                     <TableCell className='py-3 text-xs text-muted-foreground'>
                       <span className='flex items-center gap-1'>
@@ -368,14 +312,7 @@ export function Feedbacks() {
           {viewItem && (
             <>
               <DialogHeader>
-                <div className='flex items-center gap-2'>
-                  <DialogTitle className='text-lg'>Feedback Details</DialogTitle>
-                  {viewItem.is_featured && (
-                    <Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[11px] gap-1'>
-                      <Sparkles className='size-3' /> Featured
-                    </Badge>
-                  )}
-                </div>
+                <DialogTitle className='text-lg'>Feedback Details</DialogTitle>
                 <DialogDescription>
                   Submitted on {formatDate(viewItem.created_at)}
                 </DialogDescription>
@@ -426,17 +363,7 @@ export function Feedbacks() {
                 </div>
               </div>
 
-              <DialogFooter className='flex items-center justify-between sm:justify-between'>
-                <Button
-                  type='button'
-                  variant={viewItem.is_featured ? 'secondary' : 'outline'}
-                  size='sm'
-                  onClick={() => handleToggleFeatured(viewItem)}
-                  className='gap-1.5'
-                >
-                  <Sparkles className='size-3.5 text-amber-500' />
-                  {viewItem.is_featured ? 'Unmark Featured' : 'Mark as Featured'}
-                </Button>
+              <DialogFooter className='flex items-center justify-end'>
                 <Button
                   type='button'
                   onClick={() => setViewItem(null)}

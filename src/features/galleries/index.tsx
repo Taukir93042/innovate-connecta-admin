@@ -377,7 +377,7 @@ export function Galleries() {
                   <TableRow key={item.id} className='hover:bg-muted/40'>
                     {/* S.No */}
                     <TableCell className='py-3 font-medium text-muted-foreground'>
-                      #{(currentPage - 1) * perPage + index + 1}
+                      {(currentPage - 1) * perPage + index + 1}
                     </TableCell>
 
                     {/* Image Thumbnail */}
