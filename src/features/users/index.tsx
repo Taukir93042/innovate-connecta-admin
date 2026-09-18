@@ -11,6 +11,7 @@ import {
   Clock,
   FileText,
   ExternalLink,
+  Download,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminUserService, type UserItem } from '@/services/admin-users'
@@ -475,17 +476,17 @@ export function Users() {
 
       {/* Dedicated PDF Preview Modal */}
       <Dialog open={!!previewPdfUrl} onOpenChange={(open) => !open && setPreviewPdfUrl(null)}>
-        <DialogContent className='sm:max-w-4xl max-h-[90vh] flex flex-col p-4 sm:p-6'>
+        <DialogContent className='sm:max-w-5xl w-[95vw] max-h-[94vh] flex flex-col p-4 sm:p-6 bg-card'>
           {previewPdfUrl && (
             <>
-              <DialogHeader className='flex flex-row items-center justify-between gap-2 pb-3 border-b'>
+              <DialogHeader className='flex flex-row items-center justify-between gap-3 pb-3 border-b'>
                 <div className='min-w-0 flex-1'>
                   <DialogTitle className='flex items-center gap-2 text-lg font-semibold truncate'>
                     <FileText className='h-5 w-5 text-primary shrink-0' />
                     <span className='truncate'>{previewPdfUrl.title}</span>
                   </DialogTitle>
                   <DialogDescription className='text-xs text-muted-foreground truncate mt-0.5'>
-                    Candidate: {previewPdfUrl.userName}
+                    Candidate: <strong className='text-foreground'>{previewPdfUrl.userName}</strong>
                   </DialogDescription>
                 </div>
 
@@ -494,7 +495,7 @@ export function Users() {
                     href={previewPdfUrl.url}
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline px-3 py-1.5 rounded-md bg-muted/50 border hover:bg-muted transition-colors'
+                    className='inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/10 px-3 py-1.5 rounded-md border border-primary/30 shadow-xs transition-colors'
                     title='Open in new browser tab'
                   >
                     <span>Open Full Tab</span>
@@ -503,19 +504,35 @@ export function Users() {
                 </div>
               </DialogHeader>
 
-              {/* PDF Viewer Container */}
-              <div className='flex-1 min-h-[480px] h-[65vh] w-full rounded-md border bg-muted/30 overflow-hidden my-2'>
+              {/* Full-Height PDF Viewer Container */}
+              <div className='relative w-full h-[72vh] min-h-[520px] rounded-lg border bg-white overflow-hidden shadow-inner my-2'>
                 <iframe
-                  src={`${previewPdfUrl.url}#toolbar=1`}
-                  className='w-full h-full border-0'
+                  src={`${previewPdfUrl.url}#view=FitH&toolbar=1`}
+                  className='absolute inset-0 w-full h-full border-0 bg-white'
+                  style={{ width: '100%', height: '100%', display: 'block' }}
                   title={previewPdfUrl.title}
                 />
               </div>
 
-              <DialogFooter className='pt-2 border-t flex justify-end gap-2'>
-                <Button variant='outline' onClick={() => setPreviewPdfUrl(null)}>
-                  Close Preview
-                </Button>
+              <DialogFooter className='pt-2 border-t flex flex-row items-center justify-between gap-2 w-full'>
+                <div className='text-xs text-muted-foreground truncate hidden sm:block'>
+                  Verified Candidate PDF Resume
+                </div>
+                <div className='flex items-center gap-2 ml-auto'>
+                  <a
+                    href={previewPdfUrl.url}
+                    download={`${previewPdfUrl.userName}_resume.pdf`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='inline-flex items-center gap-1.5 text-xs font-medium text-foreground hover:bg-muted px-3 py-1.5 rounded-md border shadow-xs transition-colors'
+                  >
+                    <Download className='h-3.5 w-3.5' />
+                    <span>Download</span>
+                  </a>
+                  <Button variant='default' size='sm' onClick={() => setPreviewPdfUrl(null)}>
+                    Close
+                  </Button>
+                </div>
               </DialogFooter>
             </>
           )}
