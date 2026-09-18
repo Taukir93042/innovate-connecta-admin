@@ -1,0 +1,1 @@
+import{s as e}from"./index-C860CTCN.js";var t=e;export{t as component};
