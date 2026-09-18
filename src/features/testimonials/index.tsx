@@ -8,7 +8,6 @@ import {
   Star,
   Quote,
   Loader2,
-  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -80,7 +79,6 @@ export function Testimonials() {
   const [formDesignation, setFormDesignation] = useState('')
   const [formReview, setFormReview] = useState('')
   const [formRating, setFormRating] = useState('5')
-  const [formIsFeatured, setFormIsFeatured] = useState(false)
   const [formIsActive, setFormIsActive] = useState(true)
   const [formAvatarFile, setFormAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -134,7 +132,6 @@ export function Testimonials() {
     setFormDesignation('')
     setFormReview('')
     setFormRating('5')
-    setFormIsFeatured(false)
     setFormIsActive(true)
     setFormAvatarFile(null)
     setAvatarPreview(null)
@@ -147,7 +144,6 @@ export function Testimonials() {
     setFormDesignation(item.designation || '')
     setFormReview(item.review)
     setFormRating(item.rating ? String(item.rating) : '5')
-    setFormIsFeatured(item.is_featured)
     setFormIsActive(item.is_active)
     setFormAvatarFile(null)
     setAvatarPreview(item.avatar ? getStorageUrl(item.avatar) : null)
@@ -176,7 +172,6 @@ export function Testimonials() {
       if (formDesignation) formData.append('designation', formDesignation)
       formData.append('review', formReview)
       formData.append('rating', formRating)
-      formData.append('is_featured', formIsFeatured ? '1' : '0')
       formData.append('is_active', formIsActive ? '1' : '0')
       if (formAvatarFile) {
         formData.append('avatar', formAvatarFile)
@@ -535,29 +530,15 @@ export function Testimonials() {
                 )}
               </div>
 
-              <div className='flex items-center justify-between gap-4 pt-2 border-t'>
-                <div className='flex items-center gap-2'>
-                  <Switch
-                    id='is_active'
-                    checked={formIsActive}
-                    onCheckedChange={setFormIsActive}
-                  />
-                  <Label htmlFor='is_active' className='cursor-pointer text-xs font-normal'>
-                    Active on website
-                  </Label>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <Switch
-                    id='is_featured'
-                    checked={formIsFeatured}
-                    onCheckedChange={setFormIsFeatured}
-                  />
-                  <Label htmlFor='is_featured' className='cursor-pointer text-xs font-normal flex items-center gap-1'>
-                    <Sparkles className='h-3 w-3 text-amber-500' />
-                    Featured on Home
-                  </Label>
-                </div>
+              <div className='flex items-center gap-2 pt-2 border-t'>
+                <Switch
+                  id='is_active'
+                  checked={formIsActive}
+                  onCheckedChange={setFormIsActive}
+                />
+                <Label htmlFor='is_active' className='cursor-pointer text-xs font-normal'>
+                  Active on website
+                </Label>
               </div>
             </div>
 
@@ -595,11 +576,6 @@ export function Testimonials() {
               <DialogHeader>
                 <div className='flex items-center justify-between gap-2 mb-2'>
                   <div className='flex items-center gap-2'>
-                    {viewItem.is_featured && (
-                      <Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-xs'>
-                        <Sparkles className='h-3 w-3 text-amber-500 fill-amber-500' /> Featured
-                      </Badge>
-                    )}
                     <Badge
                       variant={viewItem.is_active ? 'default' : 'secondary'}
                       className={
@@ -647,7 +623,7 @@ export function Testimonials() {
 
               {/* Full Review Content */}
               <div className='my-3 rounded-lg border bg-muted/30 p-4 relative'>
-                <Quote className='h-6 w-6 text-muted-foreground/20 absolute top-3 left-3 -scale-x-100' />
+             
                 <p className='text-sm text-foreground/90 italic leading-relaxed pt-2 pl-4'>
                   "{viewItem.review}"
                 </p>

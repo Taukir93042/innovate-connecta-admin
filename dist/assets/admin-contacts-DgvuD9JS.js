@@ -1,1 +1,0 @@
-import{m as e}from"./index-jQ4qd99k.js";var t={async getContacts(t){return(await e.get(`/admin/contacts`,{params:{all:!0,...t}})).data},async getContact(t){return(await e.get(`/admin/contacts/${t}`)).data},async deleteContact(t){return(await e.delete(`/admin/contacts/${t}`)).data}};export{t};
