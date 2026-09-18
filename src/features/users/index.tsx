@@ -9,11 +9,13 @@ import {
   Calendar,
   GraduationCap,
   Clock,
+  FileText,
+  ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminUserService, type UserItem } from '@/services/admin-users'
 import { getApiErrorMessage } from '@/lib/api-client'
-import { getDisplayNameInitials } from '@/lib/utils'
+import { getDisplayNameInitials, getStorageUrl } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -48,6 +50,13 @@ export function Users() {
 
   // View user modal state
   const [viewItem, setViewItem] = useState<UserItem | null>(null)
+
+  // PDF Preview modal state
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<{
+    url: string
+    title: string
+    userName: string
+  } | null>(null)
 
   async function fetchUsers() {
     try {
@@ -189,102 +198,137 @@ export function Users() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[80px]'>S.No</TableHead>
-                  <TableHead className='min-w-[180px]'>Name</TableHead>
-                  <TableHead className='min-w-[220px]'>Email</TableHead>
-                  <TableHead className='w-[160px]'>Phone No</TableHead>
-                  <TableHead className='w-[140px]'>Status</TableHead>
-                  <TableHead className='w-[140px]'>Registered</TableHead>
-                  <TableHead className='w-[90px] text-end'>Actions</TableHead>
+                  <TableHead className='w-[70px]'>S.No</TableHead>
+                  <TableHead className='min-w-[170px]'>Name</TableHead>
+                  <TableHead className='min-w-[200px]'>Email</TableHead>
+                  <TableHead className='w-[150px]'>Phone No</TableHead>
+                  <TableHead className='w-[130px]'>Resume</TableHead>
+                  <TableHead className='w-[130px]'>Status</TableHead>
+                  <TableHead className='w-[130px]'>Registered</TableHead>
+                  <TableHead className='w-[80px] text-end'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((item, index) => (
-                  <TableRow key={item.id} className='hover:bg-muted/40'>
-                    {/* S.No */}
-                    <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
-                      {index + 1}
-                    </TableCell>
+                {users.map((item, index) => {
+                  const effectiveResumeUrl =
+                    item.resume_url || (item.resume_path ? getStorageUrl(item.resume_path) : null)
 
-                    {/* Name */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-3'>
-                        <Avatar className='h-9 w-9 border shrink-0'>
-                          <AvatarFallback className='bg-primary/10 text-primary font-semibold text-xs'>
-                            {getDisplayNameInitials(item.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className='font-semibold text-sm truncate' title={item.name}>
-                          {item.name}
+                  return (
+                    <TableRow key={item.id} className='hover:bg-muted/40'>
+                      {/* S.No */}
+                      <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
+                        {index + 1}
+                      </TableCell>
+
+                      {/* Name */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-3'>
+                          <Avatar className='h-9 w-9 border shrink-0'>
+                            <AvatarFallback className='bg-primary/15 text-primary font-semibold text-xs'>
+                              {getDisplayNameInitials(item.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className='font-semibold text-sm text-foreground truncate' title={item.name}>
+                            {item.name}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Email */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-1.5 text-sm text-muted-foreground'>
-                        <Mail className='size-3.5 text-muted-foreground/70 shrink-0' />
-                        <span className='truncate font-mono text-xs'>{item.email}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Phone No */}
-                    <TableCell className='py-3'>
-                      {item.phone ? (
-                        <div className='flex items-center gap-1.5 text-xs text-foreground/90 font-mono'>
-                          <Phone className='size-3.5 text-muted-foreground/70 shrink-0' />
-                          <span>{item.phone}</span>
+                      {/* Email */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-1.5 text-sm'>
+                          <Mail className='size-3.5 text-primary shrink-0' />
+                          <span className='truncate font-mono text-xs text-foreground font-medium'>{item.email}</span>
                         </div>
-                      ) : (
-                        <span className='text-xs text-muted-foreground italic'>—</span>
-                      )}
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Status & Switch */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-2'>
-                        <Switch
-                          checked={item.is_active}
-                          onCheckedChange={() => handleToggleStatus(item)}
-                          aria-label='Toggle status'
-                        />
-                        <Badge
-                          variant={item.is_active ? 'default' : 'secondary'}
-                          className={
-                            item.is_active
-                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                              : 'text-muted-foreground text-[11px]'
-                          }
-                        >
-                          {item.is_active ? 'Active' : 'Blocked'}
-                        </Badge>
-                      </div>
-                    </TableCell>
+                      {/* Phone No */}
+                      <TableCell className='py-3'>
+                        {item.phone ? (
+                          <div className='flex items-center gap-1.5 text-xs text-foreground font-mono font-medium'>
+                            <Phone className='size-3.5 text-primary/80 shrink-0' />
+                            <span>{item.phone}</span>
+                          </div>
+                        ) : (
+                          <span className='text-xs text-muted-foreground italic'>—</span>
+                        )}
+                      </TableCell>
 
-                    {/* Registered Date */}
-                    <TableCell className='py-3 text-xs text-muted-foreground'>
-                      <span className='flex items-center gap-1'>
-                        <Calendar className='size-3.5 text-muted-foreground/70 shrink-0' />
-                        {formatDate(item.created_at)}
-                      </span>
-                    </TableCell>
+                      {/* Resume Column */}
+                      <TableCell className='py-3'>
+                        {effectiveResumeUrl ? (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-7 gap-1.5 rounded-full text-xs font-semibold border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors px-2.5 shadow-xs'
+                            onClick={() =>
+                              setPreviewPdfUrl({
+                                url: effectiveResumeUrl,
+                                title: item.resume_title || `${item.name} - Resume`,
+                                userName: item.name,
+                              })
+                            }
+                            title='Preview Candidate Resume'
+                          >
+                            <FileText className='size-3.5 text-primary' />
+                            <span>Preview</span>
+                          </Button>
+                        ) : (
+                          <Badge
+                            variant='outline'
+                            className='text-[10px] text-muted-foreground border-border/50 bg-muted/20 font-normal px-2 py-0.5'
+                          >
+                            No Resume
+                          </Badge>
+                        )}
+                      </TableCell>
 
-                    {/* Actions: ONLY VIEW */}
-                    <TableCell className='py-3 text-end'>
-                      <div className='flex items-center justify-end'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8 text-primary hover:text-primary hover:bg-primary/10'
-                          onClick={() => setViewItem(item)}
-                          title='View user profile'
-                        >
-                          <Eye className='size-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      {/* Status & Switch */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-2'>
+                          <Switch
+                            checked={item.is_active}
+                            onCheckedChange={() => handleToggleStatus(item)}
+                            aria-label='Toggle status'
+                          />
+                          <Badge
+                            variant={item.is_active ? 'default' : 'secondary'}
+                            className={
+                              item.is_active
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px] font-medium'
+                                : 'text-muted-foreground text-[11px]'
+                            }
+                          >
+                            {item.is_active ? 'Active' : 'Blocked'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+
+                      {/* Registered Date */}
+                      <TableCell className='py-3 text-xs'>
+                        <span className='flex items-center gap-1.5 text-foreground/80 font-medium'>
+                          <Calendar className='size-3.5 text-primary/80 shrink-0' />
+                          {formatDate(item.created_at)}
+                        </span>
+                      </TableCell>
+
+                      {/* Actions: VIEW */}
+                      <TableCell className='py-3 text-end'>
+                        <div className='flex items-center justify-end'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8 text-primary hover:text-primary hover:bg-primary/10'
+                            onClick={() => setViewItem(item)}
+                            title='View user profile'
+                          >
+                            <Eye className='size-4' />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -376,12 +420,101 @@ export function Users() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Candidate Resume / CV (if uploaded) */}
+                  {viewItem.resume_path || viewItem.resume_url ? (
+                    <div className='flex items-center justify-between gap-2.5 p-3 rounded-lg border border-primary/25 bg-primary/5'>
+                      <div className='flex items-center gap-2.5 min-w-0 flex-1'>
+                        <div className='p-2 rounded-md bg-primary/15 text-primary shrink-0'>
+                          <FileText className='h-4 w-4' />
+                        </div>
+                        <div className='min-w-0 flex-1'>
+                          <div className='text-xs font-semibold text-foreground truncate'>
+                            {viewItem.resume_title || 'Candidate Resume (PDF)'}
+                          </div>
+                          <div className='text-[11px] text-muted-foreground'>
+                            {viewItem.resume_size || 'PDF Document'}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        size='sm'
+                        className='h-8 gap-1.5 text-xs'
+                        onClick={() =>
+                          setPreviewPdfUrl({
+                            url:
+                              viewItem.resume_url ||
+                              (viewItem.resume_path ? getStorageUrl(viewItem.resume_path) : '#'),
+                            title: viewItem.resume_title || `${viewItem.name} - Resume`,
+                            userName: viewItem.name,
+                          })
+                        }
+                      >
+                        <span>Preview</span>
+                        <Eye className='size-3.5' />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className='flex items-center gap-2.5 p-2.5 rounded-md border bg-muted/10 text-xs text-muted-foreground'>
+                      <FileText className='h-4 w-4 text-muted-foreground/60 shrink-0' />
+                      <span>No resume uploaded yet</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <DialogFooter className='pt-2 border-t'>
                 <Button variant='outline' onClick={() => setViewItem(null)}>
                   Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dedicated PDF Preview Modal */}
+      <Dialog open={!!previewPdfUrl} onOpenChange={(open) => !open && setPreviewPdfUrl(null)}>
+        <DialogContent className='sm:max-w-4xl max-h-[90vh] flex flex-col p-4 sm:p-6'>
+          {previewPdfUrl && (
+            <>
+              <DialogHeader className='flex flex-row items-center justify-between gap-2 pb-3 border-b'>
+                <div className='min-w-0 flex-1'>
+                  <DialogTitle className='flex items-center gap-2 text-lg font-semibold truncate'>
+                    <FileText className='h-5 w-5 text-primary shrink-0' />
+                    <span className='truncate'>{previewPdfUrl.title}</span>
+                  </DialogTitle>
+                  <DialogDescription className='text-xs text-muted-foreground truncate mt-0.5'>
+                    Candidate: {previewPdfUrl.userName}
+                  </DialogDescription>
+                </div>
+
+                <div className='flex items-center gap-2 shrink-0 pr-6'>
+                  <a
+                    href={previewPdfUrl.url}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline px-3 py-1.5 rounded-md bg-muted/50 border hover:bg-muted transition-colors'
+                    title='Open in new browser tab'
+                  >
+                    <span>Open Full Tab</span>
+                    <ExternalLink className='h-3.5 w-3.5' />
+                  </a>
+                </div>
+              </DialogHeader>
+
+              {/* PDF Viewer Container */}
+              <div className='flex-1 min-h-[480px] h-[65vh] w-full rounded-md border bg-muted/30 overflow-hidden my-2'>
+                <iframe
+                  src={`${previewPdfUrl.url}#toolbar=1`}
+                  className='w-full h-full border-0'
+                  title={previewPdfUrl.title}
+                />
+              </div>
+
+              <DialogFooter className='pt-2 border-t flex justify-end gap-2'>
+                <Button variant='outline' onClick={() => setPreviewPdfUrl(null)}>
+                  Close Preview
                 </Button>
               </DialogFooter>
             </>

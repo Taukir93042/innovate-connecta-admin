@@ -6,6 +6,11 @@ export interface UserItem {
   email: string
   phone?: string | null
   field?: string | null
+  resume_path?: string | null
+  resume_url?: string | null
+  resume_title?: string | null
+  resume_size?: string | null
+  resume_updated_at?: string | null
   is_active: boolean
   email_verified_at?: string | null
   created_at?: string
