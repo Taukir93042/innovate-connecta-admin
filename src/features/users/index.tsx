@@ -7,8 +7,6 @@ import {
   Mail,
   Phone,
   Calendar,
-  CheckCircle2,
-  ShieldAlert,
   GraduationCap,
   Clock,
 } from 'lucide-react'
@@ -331,15 +329,6 @@ export function Users() {
                       >
                         {viewItem.is_active ? 'Active Account' : 'Blocked Account'}
                       </Badge>
-                      {viewItem.email_verified_at ? (
-                        <Badge variant='outline' className='text-[10px] text-emerald-600 border-emerald-500/30 gap-1'>
-                          <CheckCircle2 className='h-3 w-3' /> Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant='outline' className='text-[10px] text-amber-600 border-amber-500/30 gap-1'>
-                          <ShieldAlert className='h-3 w-3' /> Unverified
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>
