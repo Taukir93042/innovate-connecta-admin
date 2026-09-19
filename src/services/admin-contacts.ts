@@ -61,4 +61,11 @@ export const adminContactService = {
     const response = await apiClient.delete(`/admin/contacts/${id}`)
     return response.data
   },
+
+  async bulkDeleteContacts(
+    ids: number[]
+  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
+    const response = await apiClient.post('/admin/contacts/bulk-delete', { ids })
+    return response.data
+  },
 }

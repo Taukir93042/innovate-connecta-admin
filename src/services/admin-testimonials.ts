@@ -93,6 +93,13 @@ export const adminTestimonialService = {
     return response.data
   },
 
+  async bulkDeleteTestimonials(
+    ids: number[]
+  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
+    const response = await apiClient.post('/admin/testimonials/bulk-delete', { ids })
+    return response.data
+  },
+
   async toggleStatus(id: number): Promise<{
     status: boolean
     message: string

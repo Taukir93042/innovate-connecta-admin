@@ -10,6 +10,8 @@ import {
   Layers,
   BookOpen,
   Lightbulb,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -27,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -51,12 +54,19 @@ export function Feedbacks() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   // Detail modal state
   const [viewItem, setViewItem] = useState<FeedbackItem | null>(null)
 
-  // Delete modal state
+  // Single delete modal state
   const [deleteItem, setDeleteItem] = useState<FeedbackItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Bulk delete modal state
+  const [isBulkDeletingOpen, setIsBulkDeletingOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   async function fetchFeedbacks() {
     try {
@@ -67,6 +77,10 @@ export function Feedbacks() {
       })
       if (res.status && Array.isArray(res.data)) {
         setFeedbacks(res.data)
+        // Clean up selectedIds that are no longer in list
+        setSelectedIds((prev) =>
+          prev.filter((id) => res.data.some((item) => item.id === id))
+        )
       }
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
@@ -82,6 +96,22 @@ export function Feedbacks() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     fetchFeedbacks()
+  }
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedIds(feedbacks.map((f) => f.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleToggleSelect = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, id])
+    } else {
+      setSelectedIds((prev) => prev.filter((item) => item !== id))
+    }
   }
 
   const openViewModal = async (item: FeedbackItem) => {
@@ -108,6 +138,7 @@ export function Feedbacks() {
       await adminFeedbackService.deleteFeedback(deleteItem.id)
       toast.success('Feedback deleted successfully.')
       setFeedbacks((prev) => prev.filter((f) => f.id !== deleteItem.id))
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteItem.id))
       setDeleteItem(null)
       if (viewItem && viewItem.id === deleteItem.id) {
         setViewItem(null)
@@ -116,6 +147,27 @@ export function Feedbacks() {
       toast.error(getApiErrorMessage(err))
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return
+    setIsBulkDeleting(true)
+    try {
+      const res = await adminFeedbackService.bulkDeleteFeedbacks(selectedIds)
+      toast.success(
+        res.message || `Successfully deleted ${selectedIds.length} feedback(s).`
+      )
+      setFeedbacks((prev) => prev.filter((f) => !selectedIds.includes(f.id)))
+      if (viewItem && selectedIds.includes(viewItem.id)) {
+        setViewItem(null)
+      }
+      setSelectedIds([])
+      setIsBulkDeletingOpen(false)
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setIsBulkDeleting(false)
     }
   }
 
@@ -131,6 +183,11 @@ export function Feedbacks() {
       return dateString
     }
   }
+
+  const isAllSelected =
+    feedbacks.length > 0 && selectedIds.length === feedbacks.length
+  const isSomeSelected =
+    selectedIds.length > 0 && selectedIds.length < feedbacks.length
 
   return (
     <>
@@ -150,20 +207,50 @@ export function Feedbacks() {
               Review candidate responses, key takeaways, and suggestions from completed sessions.
             </p>
           </div>
-          <Badge variant='outline' className='px-3 py-1 text-sm font-medium'>
-            Total: {feedbacks.length} {feedbacks.length === 1 ? 'Feedback' : 'Feedbacks'}
-          </Badge>
+          <div className='flex items-center gap-2'>
+            {selectedIds.length > 0 && (
+              <Badge variant='secondary' className='px-3 py-1 text-sm font-medium bg-primary/10 text-primary border-primary/20'>
+                <CheckSquare className='mr-1.5 size-3.5' /> {selectedIds.length} Selected
+              </Badge>
+            )}
+            <Badge variant='outline' className='px-3 py-1 text-sm font-medium'>
+              Total: {feedbacks.length} {feedbacks.length === 1 ? 'Feedback' : 'Feedbacks'}
+            </Badge>
+          </div>
         </div>
 
-        {/* Filters & Search Bar */}
+        {/* Filters & Search Bar & Bulk Actions */}
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <Button
-            variant='default'
-            size='sm'
-            onClick={() => fetchFeedbacks()}
-          >
-            All Feedbacks
-          </Button>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='default'
+              size='sm'
+              onClick={() => fetchFeedbacks()}
+            >
+              All Feedbacks
+            </Button>
+
+            {selectedIds.length > 0 && (
+              <div className='flex items-center gap-2 animate-in fade-in-50 duration-200'>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => setIsBulkDeletingOpen(true)}
+                  className='shadow-xs'
+                >
+                  <Trash2 className='mr-1.5 size-4' /> Delete Selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setSelectedIds([])}
+                  className='text-muted-foreground hover:text-foreground'
+                >
+                  <X className='mr-1 size-3.5' /> Deselect
+                </Button>
+              </div>
+            )}
+          </div>
 
           <form
             onSubmit={handleSearchSubmit}
@@ -205,7 +292,18 @@ export function Feedbacks() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[70px]'>S.No</TableHead>
+                  {/* Checkbox Header */}
+                  <TableHead className='w-[44px] px-3 text-center'>
+                    <Checkbox
+                      checked={
+                        isAllSelected ? true : isSomeSelected ? 'indeterminate' : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label='Select all feedbacks'
+                      className='translate-y-0.5'
+                    />
+                  </TableHead>
+                  <TableHead className='w-[60px]'>S.No</TableHead>
                   <TableHead className='min-w-[180px]'>Name</TableHead>
                   <TableHead className='min-w-[200px]'>Email</TableHead>
                   <TableHead className='w-[180px]'>Session / Workshop</TableHead>
@@ -215,91 +313,112 @@ export function Feedbacks() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {feedbacks.map((item, index) => (
-                  <TableRow key={item.id} className='hover:bg-muted/40'>
-                    {/* S.No */}
-                    <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
-                      {index + 1}
-                    </TableCell>
+                {feedbacks.map((item, index) => {
+                  const isSelected = selectedIds.includes(item.id)
+                  return (
+                    <TableRow
+                      key={item.id}
+                      data-state={isSelected ? 'selected' : undefined}
+                      className={`hover:bg-muted/40 transition-colors ${
+                        isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''
+                      }`}
+                    >
+                      {/* Checkbox Cell */}
+                      <TableCell className='px-3 text-center'>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleToggleSelect(item.id, !!checked)
+                          }
+                          aria-label={`Select feedback from ${item.name}`}
+                          className='translate-y-0.5'
+                        />
+                      </TableCell>
 
-                    {/* Name */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-2.5'>
-                        <Avatar className='h-8 w-8 border shrink-0'>
-                          <AvatarFallback className='bg-primary/10 text-primary font-semibold text-xs'>
-                            {getDisplayNameInitials(item.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className='font-semibold text-sm truncate' title={item.name}>
-                          {item.name}
+                      {/* S.No */}
+                      <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
+                        {index + 1}
+                      </TableCell>
+
+                      {/* Name */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-2.5'>
+                          <Avatar className='h-8 w-8 border shrink-0'>
+                            <AvatarFallback className='bg-primary/10 text-primary font-semibold text-xs'>
+                              {getDisplayNameInitials(item.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className='font-semibold text-sm truncate' title={item.name}>
+                            {item.name}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Email */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                        <Mail className='size-3 text-muted-foreground/70 shrink-0' />
-                        <span className='truncate font-mono'>{item.email}</span>
-                      </div>
-                    </TableCell>
+                      {/* Email */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                          <Mail className='size-3 text-muted-foreground/70 shrink-0' />
+                          <span className='truncate font-mono'>{item.email}</span>
+                        </div>
+                      </TableCell>
 
-                    {/* Session Name */}
-                    <TableCell className='py-3'>
-                      {item.session_name ? (
-                        <Badge variant='outline' className='font-normal text-xs flex items-center gap-1 w-fit'>
-                          <Layers className='size-3 text-muted-foreground' />
-                          <span className='truncate max-w-[140px]'>{item.session_name}</span>
-                        </Badge>
-                      ) : (
-                        <span className='text-xs text-muted-foreground/60'>General Session</span>
-                      )}
-                    </TableCell>
+                      {/* Session Name */}
+                      <TableCell className='py-3'>
+                        {item.session_name ? (
+                          <Badge variant='outline' className='font-normal text-xs flex items-center gap-1 w-fit'>
+                            <Layers className='size-3 text-muted-foreground' />
+                            <span className='truncate max-w-[140px]'>{item.session_name}</span>
+                          </Badge>
+                        ) : (
+                          <span className='text-xs text-muted-foreground/60'>General Session</span>
+                        )}
+                      </TableCell>
 
-                    {/* Key Takeaways */}
-                    <TableCell className='py-3'>
-                      <div
-                        className='text-xs text-foreground/90 line-clamp-2 cursor-pointer hover:underline'
-                        onClick={() => openViewModal(item)}
-                        title='Click to view details'
-                      >
-                        {item.key_takeaway || item.suggestions || '—'}
-                      </div>
-                    </TableCell>
-
-                    {/* Date */}
-                    <TableCell className='py-3 text-xs text-muted-foreground'>
-                      <span className='flex items-center gap-1'>
-                        <Calendar className='size-3 text-muted-foreground/70 shrink-0' />
-                        {formatDate(item.created_at)}
-                      </span>
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell className='py-3 text-end'>
-                      <div className='flex items-center justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8'
+                      {/* Key Takeaways */}
+                      <TableCell className='py-3'>
+                        <div
+                          className='text-xs text-foreground/90 line-clamp-2 cursor-pointer hover:underline'
                           onClick={() => openViewModal(item)}
-                          title='View details'
+                          title='Click to view details'
                         >
-                          <Eye className='size-4' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
-                          onClick={() => setDeleteItem(item)}
-                          title='Delete feedback'
-                        >
-                          <Trash2 className='size-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {item.key_takeaway || item.suggestions || '—'}
+                        </div>
+                      </TableCell>
+
+                      {/* Date */}
+                      <TableCell className='py-3 text-xs text-muted-foreground'>
+                        <span className='flex items-center gap-1'>
+                          <Calendar className='size-3 text-muted-foreground/70 shrink-0' />
+                          {formatDate(item.created_at)}
+                        </span>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className='py-3 text-end'>
+                        <div className='flex items-center justify-end gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8'
+                            onClick={() => openViewModal(item)}
+                            title='View details'
+                          >
+                            <Eye className='size-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
+                            onClick={() => setDeleteItem(item)}
+                            title='Delete feedback'
+                          >
+                            <Trash2 className='size-4' />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -376,7 +495,7 @@ export function Feedbacks() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmDialog
         open={!!deleteItem}
         onOpenChange={(open) => !open && setDeleteItem(null)}
@@ -386,6 +505,19 @@ export function Feedbacks() {
         destructive
         isLoading={isDeleting}
         handleConfirm={handleDeleteConfirm}
+        className='sm:max-w-sm'
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isBulkDeletingOpen}
+        onOpenChange={setIsBulkDeletingOpen}
+        title='Delete Selected Feedbacks'
+        desc={`Are you sure you want to permanently delete the ${selectedIds.length} selected feedbacks? This action cannot be undone.`}
+        confirmText={`Delete ${selectedIds.length} Feedbacks`}
+        destructive
+        isLoading={isBulkDeleting}
+        handleConfirm={handleBulkDeleteConfirm}
         className='sm:max-w-sm'
       />
     </>

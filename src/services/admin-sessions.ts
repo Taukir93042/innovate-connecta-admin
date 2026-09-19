@@ -130,6 +130,13 @@ export const adminSessionService = {
     return response.data
   },
 
+  async bulkDeleteSessions(
+    ids: number[]
+  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
+    const response = await apiClient.post('/admin/sessions/bulk-delete', { ids })
+    return response.data
+  },
+
   async toggleStatus(id: number): Promise<{
     status: boolean
     message: string

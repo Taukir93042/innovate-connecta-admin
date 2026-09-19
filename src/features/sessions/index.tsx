@@ -9,6 +9,8 @@ import {
   Calendar,
   Eye,
   Image as ImageIcon,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -31,6 +33,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -57,15 +60,22 @@ export function Sessions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [perPage, setPerPage] = useState(10)
 
-  // Delete modal state
+  // Single delete modal state
   const [deleteItem, setDeleteItem] = useState<SessionItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Bulk delete modal state
+  const [isBulkDeletingOpen, setIsBulkDeletingOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   async function fetchCategories() {
     try {
@@ -89,6 +99,10 @@ export function Sessions() {
       })
       if (res.status && Array.isArray(res.data)) {
         setSessions(res.data)
+        // Clean up selectedIds that are no longer in list
+        setSelectedIds((prev) =>
+          prev.filter((id) => res.data.some((item) => item.id === id))
+        )
         if (res.pagination) {
           setCurrentPage(res.pagination.current_page)
           setTotalPages(res.pagination.last_page)
@@ -122,6 +136,22 @@ export function Sessions() {
     }
   }
 
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedIds(sessions.map((s) => s.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleToggleSelect = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, id])
+    } else {
+      setSelectedIds((prev) => prev.filter((item) => item !== id))
+    }
+  }
+
   const handleToggleStatus = async (item: SessionItem) => {
     try {
       await adminSessionService.toggleStatus(item.id)
@@ -141,6 +171,7 @@ export function Sessions() {
       await adminSessionService.deleteSession(deleteItem.id)
       toast.success('Session deleted successfully.')
       setSessions((prev) => prev.filter((s) => s.id !== deleteItem.id))
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteItem.id))
       setDeleteItem(null)
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
@@ -148,6 +179,30 @@ export function Sessions() {
       setIsDeleting(false)
     }
   }
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return
+    setIsBulkDeleting(true)
+    try {
+      const res = await adminSessionService.bulkDeleteSessions(selectedIds)
+      toast.success(
+        res.message || `Successfully deleted ${selectedIds.length} session(s).`
+      )
+      setSessions((prev) => prev.filter((s) => !selectedIds.includes(s.id)))
+      setSelectedIds([])
+      setIsBulkDeletingOpen(false)
+      fetchSessions()
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
+  const isAllSelected =
+    sessions.length > 0 && selectedIds.length === sessions.length
+  const isSomeSelected =
+    selectedIds.length > 0 && selectedIds.length < sessions.length
 
   return (
     <>
@@ -168,13 +223,20 @@ export function Sessions() {
               Manage interactive workshops, campus drives, corporate trainings, and live sessions.
             </p>
           </div>
-          <Button
-            onClick={() => navigate({ to: '/sessions/create' })}
-            className='gap-2'
-          >
-            <Plus className='h-4 w-4' />
-            Add Session
-          </Button>
+          <div className='flex items-center gap-2'>
+            {selectedIds.length > 0 && (
+              <Badge variant='secondary' className='px-3 py-1 text-sm font-medium bg-primary/10 text-primary border-primary/20'>
+                <CheckSquare className='mr-1.5 size-3.5' /> {selectedIds.length} Selected
+              </Badge>
+            )}
+            <Button
+              onClick={() => navigate({ to: '/sessions/create' })}
+              className='gap-2'
+            >
+              <Plus className='h-4 w-4' />
+              Add Session
+            </Button>
+          </div>
         </div>
 
         {/* Filters & Search Bar */}
@@ -210,6 +272,27 @@ export function Sessions() {
                 ))}
               </SelectContent>
             </Select>
+
+            {selectedIds.length > 0 && (
+              <div className='flex items-center gap-2 ml-2 animate-in fade-in-50 duration-200'>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => setIsBulkDeletingOpen(true)}
+                  className='shadow-xs'
+                >
+                  <Trash2 className='mr-1.5 size-4' /> Delete Selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setSelectedIds([])}
+                  className='text-muted-foreground hover:text-foreground'
+                >
+                  <X className='mr-1 size-3.5' /> Deselect
+                </Button>
+              </div>
+            )}
           </div>
 
           <form
@@ -258,7 +341,18 @@ export function Sessions() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[70px]'>S.No</TableHead>
+                  {/* Checkbox Header */}
+                  <TableHead className='w-[44px] px-3 text-center'>
+                    <Checkbox
+                      checked={
+                        isAllSelected ? true : isSomeSelected ? 'indeterminate' : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label='Select all sessions'
+                      className='translate-y-0.5'
+                    />
+                  </TableHead>
+                  <TableHead className='w-[60px]'>S.No</TableHead>
                   <TableHead className='min-w-[240px]'>Session Title</TableHead>
                   <TableHead className='w-[140px]'>Category</TableHead>
                   <TableHead className='w-[130px]'>Status</TableHead>
@@ -267,13 +361,32 @@ export function Sessions() {
               </TableHeader>
               <TableBody>
                 {sessions.map((item, index) => {
+                  const isSelected = selectedIds.includes(item.id)
                   const coverImage =
                     item.images?.find((img) => img.is_primary)?.image_url ||
                     (item.images?.[0]?.image ? getStorageUrl(item.images[0].image) : null) ||
                     item.image_url
 
                   return (
-                    <TableRow key={item.id} className='hover:bg-muted/40'>
+                    <TableRow
+                      key={item.id}
+                      data-state={isSelected ? 'selected' : undefined}
+                      className={`hover:bg-muted/40 transition-colors ${
+                        isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''
+                      }`}
+                    >
+                      {/* Checkbox Cell */}
+                      <TableCell className='px-3 text-center'>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleToggleSelect(item.id, !!checked)
+                          }
+                          aria-label={`Select session ${item.title}`}
+                          className='translate-y-0.5'
+                        />
+                      </TableCell>
+
                       {/* S.No */}
                       <TableCell className='py-3 font-medium text-muted-foreground'>
                         {(currentPage - 1) * perPage + index + 1}
@@ -399,7 +512,7 @@ export function Sessions() {
         )}
       </Main>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmDialog
         open={!!deleteItem}
         onOpenChange={(open) => !open && setDeleteItem(null)}
@@ -411,6 +524,20 @@ export function Sessions() {
         handleConfirm={handleDeleteConfirm}
         className='sm:max-w-sm'
       />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isBulkDeletingOpen}
+        onOpenChange={setIsBulkDeletingOpen}
+        title='Delete Selected Sessions'
+        desc={`Are you sure you want to permanently delete the ${selectedIds.length} selected sessions and their associated media? This action cannot be undone.`}
+        confirmText={`Delete ${selectedIds.length} Sessions`}
+        destructive
+        isLoading={isBulkDeleting}
+        handleConfirm={handleBulkDeleteConfirm}
+        className='sm:max-w-sm'
+      />
     </>
   )
 }
+
