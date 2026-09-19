@@ -77,4 +77,11 @@ export const adminFeedbackService = {
     const response = await apiClient.delete(`/admin/feedbacks/${id}`)
     return response.data
   },
+
+  async bulkDeleteFeedbacks(
+    ids: number[]
+  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
+    const response = await apiClient.post('/admin/feedbacks/bulk-delete', { ids })
+    return response.data
+  },
 }

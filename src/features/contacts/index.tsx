@@ -9,6 +9,8 @@ import {
   Calendar,
   Inbox,
   MessageSquareText,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -25,6 +27,7 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Table,
@@ -49,12 +52,19 @@ export function Contacts() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   // Detail modal state
   const [viewItem, setViewItem] = useState<ContactItem | null>(null)
 
-  // Delete modal state
+  // Single delete modal state
   const [deleteItem, setDeleteItem] = useState<ContactItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Bulk delete modal state
+  const [isBulkDeletingOpen, setIsBulkDeletingOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   async function fetchContacts() {
     try {
@@ -65,6 +75,10 @@ export function Contacts() {
       })
       if (res.status && Array.isArray(res.data)) {
         setContacts(res.data)
+        // Clean up any selected IDs that might no longer exist
+        setSelectedIds((prev) =>
+          prev.filter((id) => res.data.some((item) => item.id === id))
+        )
       }
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
@@ -80,6 +94,22 @@ export function Contacts() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     fetchContacts()
+  }
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedIds(contacts.map((c) => c.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleToggleSelect = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, id])
+    } else {
+      setSelectedIds((prev) => prev.filter((item) => item !== id))
+    }
   }
 
   const openViewModal = async (item: ContactItem) => {
@@ -106,6 +136,7 @@ export function Contacts() {
       await adminContactService.deleteContact(deleteItem.id)
       toast.success('Contact inquiry deleted successfully.')
       setContacts((prev) => prev.filter((c) => c.id !== deleteItem.id))
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteItem.id))
       setDeleteItem(null)
       if (viewItem && viewItem.id === deleteItem.id) {
         setViewItem(null)
@@ -114,6 +145,27 @@ export function Contacts() {
       toast.error(getApiErrorMessage(err))
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return
+    setIsBulkDeleting(true)
+    try {
+      const res = await adminContactService.bulkDeleteContacts(selectedIds)
+      toast.success(
+        res.message || `Successfully deleted ${selectedIds.length} contact inquiries.`
+      )
+      setContacts((prev) => prev.filter((c) => !selectedIds.includes(c.id)))
+      if (viewItem && selectedIds.includes(viewItem.id)) {
+        setViewItem(null)
+      }
+      setSelectedIds([])
+      setIsBulkDeletingOpen(false)
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setIsBulkDeleting(false)
     }
   }
 
@@ -129,6 +181,11 @@ export function Contacts() {
       return dateString
     }
   }
+
+  const isAllSelected =
+    contacts.length > 0 && selectedIds.length === contacts.length
+  const isSomeSelected =
+    selectedIds.length > 0 && selectedIds.length < contacts.length
 
   return (
     <>
@@ -148,20 +205,50 @@ export function Contacts() {
               View and manage contact form submissions and messages received from website visitors.
             </p>
           </div>
-          <Badge variant='outline' className='px-3 py-1 text-sm font-medium'>
-            Total: {contacts.length} {contacts.length === 1 ? 'Message' : 'Messages'}
-          </Badge>
+          <div className='flex items-center gap-2'>
+            {selectedIds.length > 0 && (
+              <Badge variant='secondary' className='px-3 py-1 text-sm font-medium bg-primary/10 text-primary border-primary/20'>
+                <CheckSquare className='mr-1.5 size-3.5' /> {selectedIds.length} Selected
+              </Badge>
+            )}
+            <Badge variant='outline' className='px-3 py-1 text-sm font-medium'>
+              Total: {contacts.length} {contacts.length === 1 ? 'Message' : 'Messages'}
+            </Badge>
+          </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar & Bulk Action Bar */}
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <Button
-            variant='default'
-            size='sm'
-            onClick={() => fetchContacts()}
-          >
-            All Messages
-          </Button>
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button
+              variant='default'
+              size='sm'
+              onClick={() => fetchContacts()}
+            >
+              All Messages
+            </Button>
+
+            {selectedIds.length > 0 && (
+              <div className='flex items-center gap-2 animate-in fade-in-50 duration-200'>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => setIsBulkDeletingOpen(true)}
+                  className='shadow-xs'
+                >
+                  <Trash2 className='mr-1.5 size-4' /> Delete Selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setSelectedIds([])}
+                  className='text-muted-foreground hover:text-foreground'
+                >
+                  <X className='mr-1 size-3.5' /> Deselect
+                </Button>
+              </div>
+            )}
+          </div>
 
           <form
             onSubmit={handleSearchSubmit}
@@ -203,7 +290,18 @@ export function Contacts() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[70px]'>S.No</TableHead>
+                  {/* Checkbox Header */}
+                  <TableHead className='w-[44px] px-3 text-center'>
+                    <Checkbox
+                      checked={
+                        isAllSelected ? true : isSomeSelected ? 'indeterminate' : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label='Select all messages'
+                      className='translate-y-0.5'
+                    />
+                  </TableHead>
+                  <TableHead className='w-[60px]'>S.No</TableHead>
                   <TableHead className='min-w-[180px]'>Name</TableHead>
                   <TableHead className='min-w-[200px]'>Email</TableHead>
                   <TableHead className='w-[150px]'>Phone</TableHead>
@@ -214,107 +312,133 @@ export function Contacts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contacts.map((item, index) => (
-                  <TableRow
-                    key={item.id}
-                    className={`hover:bg-muted/40 ${
-                      !item.is_read ? 'bg-primary/5 font-medium' : ''
-                    }`}
-                  >
-                    {/* S.No */}
-                    <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
-                      {index + 1}
-                    </TableCell>
+                {contacts.map((item, index) => {
+                  const isSelected = selectedIds.includes(item.id)
+                  return (
+                    <TableRow
+                      key={item.id}
+                      data-state={isSelected ? 'selected' : undefined}
+                      className={`hover:bg-muted/40 transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10 hover:bg-primary/15'
+                          : !item.is_read
+                          ? 'bg-primary/5 font-medium'
+                          : ''
+                      }`}
+                    >
+                      {/* Checkbox Cell */}
+                      <TableCell className='px-3 text-center'>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleToggleSelect(item.id, !!checked)
+                          }
+                          aria-label={`Select inquiry from ${item.name}`}
+                          className='translate-y-0.5'
+                        />
+                      </TableCell>
 
-                    {/* Name */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-2.5'>
-                        <Avatar className='h-8 w-8 border shrink-0'>
-                          <AvatarFallback className='bg-primary/10 text-primary font-semibold text-xs'>
-                            {getDisplayNameInitials(item.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className='font-semibold text-sm truncate' title={item.name}>
-                          {item.name}
+                      {/* S.No */}
+                      <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
+                        {index + 1}
+                      </TableCell>
+
+                      {/* Name */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-2.5'>
+                          <Avatar className='h-8 w-8 border shrink-0'>
+                            <AvatarFallback className='bg-primary/10 text-primary font-semibold text-xs'>
+                              {getDisplayNameInitials(item.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className='font-semibold text-sm truncate' title={item.name}>
+                            {item.name}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Email */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                        <Mail className='size-3 text-muted-foreground/70 shrink-0' />
-                        <span className='truncate font-mono'>{item.email || '—'}</span>
-                      </div>
-                    </TableCell>
+                      {/* Email */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                          <Mail className='size-3 text-muted-foreground/70 shrink-0' />
+                          <span className='truncate font-mono'>{item.email || '—'}</span>
+                        </div>
+                      </TableCell>
 
-                    {/* Phone */}
-                    <TableCell className='py-3 text-xs text-muted-foreground font-mono'>
-                      {item.phone ? (
-                        <span className='flex items-center gap-1'>
-                          <Phone className='size-3 text-muted-foreground/70 shrink-0' />
-                          <span className='truncate'>{item.phone}</span>
-                        </span>
-                      ) : (
-                        <span className='text-muted-foreground/60'>—</span>
-                      )}
-                    </TableCell>
+                      {/* Phone */}
+                      <TableCell className='py-3 text-xs text-muted-foreground font-mono'>
+                        {item.phone ? (
+                          <span className='flex items-center gap-1'>
+                            <Phone className='size-3 text-muted-foreground/70 shrink-0' />
+                            <span className='truncate'>{item.phone}</span>
+                          </span>
+                        ) : (
+                          <span className='text-muted-foreground/60'>—</span>
+                        )}
+                      </TableCell>
 
-                    {/* Subject */}
-                    <TableCell className='py-3'>
-                      {item.subject ? (
-                        <Badge variant='outline' className='font-normal text-xs truncate max-w-[140px]' title={item.subject}>
-                          {item.subject}
-                        </Badge>
-                      ) : (
-                        <span className='text-xs text-muted-foreground/60'>General Inquiry</span>
-                      )}
-                    </TableCell>
+                      {/* Subject */}
+                      <TableCell className='py-3'>
+                        {item.subject ? (
+                          <Badge
+                            variant='outline'
+                            className='font-normal text-xs truncate max-w-[140px]'
+                            title={item.subject}
+                          >
+                            {item.subject}
+                          </Badge>
+                        ) : (
+                          <span className='text-xs text-muted-foreground/60'>
+                            General Inquiry
+                          </span>
+                        )}
+                      </TableCell>
 
-                    {/* Message */}
-                    <TableCell className='py-3'>
-                      <div
-                        className='text-xs text-foreground/90 line-clamp-2 cursor-pointer hover:underline'
-                        onClick={() => openViewModal(item)}
-                        title='Click to view full message'
-                      >
-                        {item.message || '—'}
-                      </div>
-                    </TableCell>
-
-                    {/* Date */}
-                    <TableCell className='py-3 text-xs text-muted-foreground'>
-                      <span className='flex items-center gap-1'>
-                        <Calendar className='size-3 text-muted-foreground/70 shrink-0' />
-                        {formatDate(item.created_at)}
-                      </span>
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell className='py-3 text-end'>
-                      <div className='flex items-center justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8'
+                      {/* Message */}
+                      <TableCell className='py-3'>
+                        <div
+                          className='text-xs text-foreground/90 line-clamp-2 cursor-pointer hover:underline'
                           onClick={() => openViewModal(item)}
-                          title='View inquiry'
+                          title='Click to view full message'
                         >
-                          <Eye className='size-4' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
-                          onClick={() => setDeleteItem(item)}
-                          title='Delete inquiry'
-                        >
-                          <Trash2 className='size-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {item.message || '—'}
+                        </div>
+                      </TableCell>
+
+                      {/* Date */}
+                      <TableCell className='py-3 text-xs text-muted-foreground'>
+                        <span className='flex items-center gap-1'>
+                          <Calendar className='size-3 text-muted-foreground/70 shrink-0' />
+                          {formatDate(item.created_at)}
+                        </span>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className='py-3 text-end'>
+                        <div className='flex items-center justify-end gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8'
+                            onClick={() => openViewModal(item)}
+                            title='View inquiry'
+                          >
+                            <Eye className='size-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
+                            onClick={() => setDeleteItem(item)}
+                            title='Delete inquiry'
+                          >
+                            <Trash2 className='size-4' />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -408,7 +532,7 @@ export function Contacts() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmDialog
         open={!!deleteItem}
         onOpenChange={(open) => !open && setDeleteItem(null)}
@@ -418,6 +542,19 @@ export function Contacts() {
         destructive
         isLoading={isDeleting}
         handleConfirm={handleDeleteConfirm}
+        className='sm:max-w-sm'
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isBulkDeletingOpen}
+        onOpenChange={setIsBulkDeletingOpen}
+        title='Delete Selected Inquiries'
+        desc={`Are you sure you want to permanently delete the ${selectedIds.length} selected contact inquiries? This action cannot be undone.`}
+        confirmText={`Delete ${selectedIds.length} Inquiries`}
+        destructive
+        isLoading={isBulkDeleting}
+        handleConfirm={handleBulkDeleteConfirm}
         className='sm:max-w-sm'
       />
     </>

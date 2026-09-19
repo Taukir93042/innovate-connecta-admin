@@ -7,6 +7,8 @@ import {
   FolderTree,
   Loader2,
   Images,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -23,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -48,6 +51,9 @@ export function GalleryCategories() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -68,6 +74,10 @@ export function GalleryCategories() {
   const [deleteItem, setDeleteItem] = useState<GalleryCategoryItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Bulk delete modal state
+  const [isBulkDeletingOpen, setIsBulkDeletingOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+
   async function fetchCategories(page = currentPage, currentPerPage = perPage) {
     try {
       setIsLoading(true)
@@ -78,6 +88,10 @@ export function GalleryCategories() {
       })
       if (res.status && Array.isArray(res.data)) {
         setCategories(res.data)
+        // Clean up selectedIds that are no longer in list
+        setSelectedIds((prev) =>
+          prev.filter((id) => res.data.some((item) => item.id === id))
+        )
         if (res.pagination) {
           setCurrentPage(res.pagination.current_page)
           setTotalPages(res.pagination.last_page)
@@ -104,6 +118,22 @@ export function GalleryCategories() {
       setCurrentPage(1)
     } else {
       fetchCategories(1, perPage)
+    }
+  }
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedIds(categories.map((c) => c.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleToggleSelect = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, id])
+    } else {
+      setSelectedIds((prev) => prev.filter((item) => item !== id))
     }
   }
 
@@ -144,7 +174,6 @@ export function GalleryCategories() {
     e.preventDefault()
     if (!formName.trim()) {
       toast.error('Please enter a category name.')
-      return
     }
 
     setIsSubmitting(true)
@@ -197,6 +226,7 @@ export function GalleryCategories() {
       await adminGalleryCategoryService.deleteCategory(deleteItem.id)
       toast.success('Gallery category deleted successfully.')
       setCategories((prev) => prev.filter((c) => c.id !== deleteItem.id))
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteItem.id))
       setDeleteItem(null)
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
@@ -204,6 +234,30 @@ export function GalleryCategories() {
       setIsDeleting(false)
     }
   }
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return
+    setIsBulkDeleting(true)
+    try {
+      const res = await adminGalleryCategoryService.bulkDeleteCategories(selectedIds)
+      toast.success(
+        res.message || `Successfully deleted ${selectedIds.length} category item(s).`
+      )
+      setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)))
+      setSelectedIds([])
+      setIsBulkDeletingOpen(false)
+      fetchCategories()
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
+  const isAllSelected =
+    categories.length > 0 && selectedIds.length === categories.length
+  const isSomeSelected =
+    selectedIds.length > 0 && selectedIds.length < categories.length
 
   return (
     <>
@@ -223,14 +277,44 @@ export function GalleryCategories() {
               Manage categories for organizing photo galleries on the portal and website.
             </p>
           </div>
-          <Button onClick={openCreateModal} className='gap-2'>
-            <Plus className='h-4 w-4' />
-            Add Category
-          </Button>
+          <div className='flex items-center gap-2'>
+            {selectedIds.length > 0 && (
+              <Badge variant='secondary' className='px-3 py-1 text-sm font-medium bg-primary/10 text-primary border-primary/20'>
+                <CheckSquare className='mr-1.5 size-3.5' /> {selectedIds.length} Selected
+              </Badge>
+            )}
+            <Button onClick={openCreateModal} className='gap-2'>
+              <Plus className='h-4 w-4' />
+              Add Category
+            </Button>
+          </div>
         </div>
 
         {/* Search & Actions Bar */}
         <div className='flex flex-wrap items-center justify-between gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
+            {selectedIds.length > 0 && (
+              <div className='flex items-center gap-2 animate-in fade-in-50 duration-200'>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => setIsBulkDeletingOpen(true)}
+                  className='shadow-xs'
+                >
+                  <Trash2 className='mr-1.5 size-4' /> Delete Selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setSelectedIds([])}
+                  className='text-muted-foreground hover:text-foreground'
+                >
+                  <X className='mr-1 size-3.5' /> Deselect
+                </Button>
+              </div>
+            )}
+          </div>
+
           <form
             onSubmit={handleSearchSubmit}
             className='flex items-center gap-2 w-full sm:w-80'
@@ -274,7 +358,18 @@ export function GalleryCategories() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[80px]'>S.No</TableHead>
+                  {/* Checkbox Header */}
+                  <TableHead className='w-[44px] px-3 text-center'>
+                    <Checkbox
+                      checked={
+                        isAllSelected ? true : isSomeSelected ? 'indeterminate' : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label='Select all categories'
+                      className='translate-y-0.5'
+                    />
+                  </TableHead>
+                  <TableHead className='w-[60px]'>S.No</TableHead>
                   <TableHead className='min-w-[200px]'>Category Name</TableHead>
                   <TableHead className='w-[200px]'>Slug</TableHead>
                   <TableHead className='w-[140px]'>Photos Count</TableHead>
@@ -283,79 +378,100 @@ export function GalleryCategories() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((item, index) => (
-                  <TableRow key={item.id} className='hover:bg-muted/40'>
-                    {/* S.No */}
-                    <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
-                      {(currentPage - 1) * perPage + index + 1}
-                    </TableCell>
-
-                    {/* Category Name */}
-                    <TableCell className='py-3 font-semibold text-sm'>
-                      {item.name}
-                    </TableCell>
-
-                    {/* Slug */}
-                    <TableCell className='py-3'>
-                      <Badge variant='outline' className='font-mono text-xs font-normal'>
-                        {item.slug}
-                      </Badge>
-                    </TableCell>
-
-                    {/* Photos Count */}
-                    <TableCell className='py-3'>
-                      <span className='inline-flex items-center gap-1.5 text-xs text-muted-foreground'>
-                        <Images className='size-3.5 text-muted-foreground' />
-                        {item.galleries_count ?? 0} photos
-                      </span>
-                    </TableCell>
-
-                    {/* Status & Switch */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-2'>
-                        <Switch
-                          checked={item.is_active}
-                          onCheckedChange={() => handleToggleStatus(item)}
-                          aria-label='Toggle status'
-                        />
-                        <Badge
-                          variant={item.is_active ? 'default' : 'secondary'}
-                          className={
-                            item.is_active
-                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                              : 'text-muted-foreground text-[11px]'
+                {categories.map((item, index) => {
+                  const isSelected = selectedIds.includes(item.id)
+                  return (
+                    <TableRow
+                      key={item.id}
+                      data-state={isSelected ? 'selected' : undefined}
+                      className={`hover:bg-muted/40 transition-colors ${
+                        isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''
+                      }`}
+                    >
+                      {/* Checkbox Cell */}
+                      <TableCell className='px-3 text-center'>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleToggleSelect(item.id, !!checked)
                           }
-                        >
-                          {item.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </TableCell>
+                          aria-label={`Select category ${item.name}`}
+                          className='translate-y-0.5'
+                        />
+                      </TableCell>
 
-                    {/* Actions */}
-                    <TableCell className='py-3 text-end'>
-                      <div className='flex items-center justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8'
-                          onClick={() => openEditModal(item)}
-                          title='Edit'
-                        >
-                          <Edit2 className='size-4' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
-                          onClick={() => setDeleteItem(item)}
-                          title='Delete'
-                        >
-                          <Trash2 className='size-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      {/* S.No */}
+                      <TableCell className='py-3 font-mono text-xs text-muted-foreground'>
+                        {(currentPage - 1) * perPage + index + 1}
+                      </TableCell>
+
+                      {/* Category Name */}
+                      <TableCell className='py-3 font-semibold text-sm'>
+                        {item.name}
+                      </TableCell>
+
+                      {/* Slug */}
+                      <TableCell className='py-3'>
+                        <Badge variant='outline' className='font-mono text-xs font-normal'>
+                          {item.slug}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Photos Count */}
+                      <TableCell className='py-3'>
+                        <span className='inline-flex items-center gap-1.5 text-xs text-muted-foreground'>
+                          <Images className='size-3.5 text-muted-foreground' />
+                          {item.galleries_count ?? 0} photos
+                        </span>
+                      </TableCell>
+
+                      {/* Status & Switch */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-2'>
+                          <Switch
+                            checked={item.is_active}
+                            onCheckedChange={() => handleToggleStatus(item)}
+                            aria-label='Toggle status'
+                          />
+                          <Badge
+                            variant={item.is_active ? 'default' : 'secondary'}
+                            className={
+                              item.is_active
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
+                                : 'text-muted-foreground text-[11px]'
+                            }
+                          >
+                            {item.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className='py-3 text-end'>
+                        <div className='flex items-center justify-end gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8'
+                            onClick={() => openEditModal(item)}
+                            title='Edit'
+                          >
+                            <Edit2 className='size-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
+                            onClick={() => setDeleteItem(item)}
+                            title='Delete'
+                          >
+                            <Trash2 className='size-4' />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
 
@@ -455,7 +571,7 @@ export function GalleryCategories() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmDialog
         open={!!deleteItem}
         onOpenChange={(open) => !open && setDeleteItem(null)}
@@ -467,6 +583,20 @@ export function GalleryCategories() {
         handleConfirm={handleDeleteConfirm}
         className='sm:max-w-sm'
       />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isBulkDeletingOpen}
+        onOpenChange={setIsBulkDeletingOpen}
+        title='Delete Selected Categories'
+        desc={`Are you sure you want to permanently delete the ${selectedIds.length} selected categories? Any linked gallery items may be affected.`}
+        confirmText={`Delete ${selectedIds.length} Categories`}
+        destructive
+        isLoading={isBulkDeleting}
+        handleConfirm={handleBulkDeleteConfirm}
+        className='sm:max-w-sm'
+      />
     </>
   )
 }
+

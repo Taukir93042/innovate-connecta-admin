@@ -66,6 +66,13 @@ export const adminSessionCategoryService = {
     return response.data
   },
 
+  async bulkDeleteCategories(
+    ids: number[]
+  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
+    const response = await apiClient.post('/admin/session-categories/bulk-delete', { ids })
+    return response.data
+  },
+
   async toggleStatus(id: number) {
     const response = await apiClient.patch(
       `/admin/session-categories/${id}/toggle-status`

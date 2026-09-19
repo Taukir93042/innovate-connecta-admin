@@ -8,6 +8,8 @@ import {
   MapPin,
   Loader2,
   ExternalLink,
+  CheckSquare,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminGalleryService, type GalleryItem } from '@/services/admin-gallery'
@@ -26,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -61,6 +64,9 @@ export function Galleries() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
 
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -80,9 +86,13 @@ export function Galleries() {
   const [formImageFile, setFormImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
-  // Delete modal state
+  // Single delete modal state
   const [deleteItem, setDeleteItem] = useState<GalleryItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Bulk delete modal state
+  const [isBulkDeletingOpen, setIsBulkDeletingOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   // Full image view modal
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
@@ -115,6 +125,10 @@ export function Galleries() {
       })
       if (res.status && Array.isArray(res.data)) {
         setGalleries(res.data)
+        // Clean up selectedIds that are no longer in list
+        setSelectedIds((prev) =>
+          prev.filter((id) => res.data.some((item) => item.id === id))
+        )
         if (res.pagination) {
           setCurrentPage(res.pagination.current_page)
           setTotalPages(res.pagination.last_page)
@@ -145,6 +159,22 @@ export function Galleries() {
       setCurrentPage(1)
     } else {
       fetchGalleries(1, perPage)
+    }
+  }
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedIds(galleries.map((g) => g.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleToggleSelect = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, id])
+    } else {
+      setSelectedIds((prev) => prev.filter((item) => item !== id))
     }
   }
 
@@ -265,6 +295,7 @@ export function Galleries() {
       await adminGalleryService.deleteGallery(deleteItem.id)
       toast.success('Gallery item deleted successfully.')
       setGalleries((prev) => prev.filter((g) => g.id !== deleteItem.id))
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteItem.id))
       setDeleteItem(null)
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
@@ -273,10 +304,34 @@ export function Galleries() {
     }
   }
 
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return
+    setIsBulkDeleting(true)
+    try {
+      const res = await adminGalleryService.bulkDeleteGalleries(selectedIds)
+      toast.success(
+        res.message || `Successfully deleted ${selectedIds.length} gallery item(s).`
+      )
+      setGalleries((prev) => prev.filter((g) => !selectedIds.includes(g.id)))
+      setSelectedIds([])
+      setIsBulkDeletingOpen(false)
+      fetchGalleries()
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
   const categoryTabList = [
     'All',
     ...categories.filter((c) => c.is_active).map((c) => c.name),
   ]
+
+  const isAllSelected =
+    galleries.length > 0 && selectedIds.length === galleries.length
+  const isSomeSelected =
+    selectedIds.length > 0 && selectedIds.length < galleries.length
 
   return (
     <>
@@ -296,13 +351,20 @@ export function Galleries() {
               View, organize, and manage photo galleries in a structured table.
             </p>
           </div>
-          <Button onClick={openCreateModal} className='gap-2'>
-            <Plus className='h-4 w-4' />
-            Add New Photo
-          </Button>
+          <div className='flex items-center gap-2'>
+            {selectedIds.length > 0 && (
+              <Badge variant='secondary' className='px-3 py-1 text-sm font-medium bg-primary/10 text-primary border-primary/20'>
+                <CheckSquare className='mr-1.5 size-3.5' /> {selectedIds.length} Selected
+              </Badge>
+            )}
+            <Button onClick={openCreateModal} className='gap-2'>
+              <Plus className='h-4 w-4' />
+              Add New Photo
+            </Button>
+          </div>
         </div>
 
-        {/* Dynamic Category Filters & Search Bar from Database */}
+        {/* Dynamic Category Filters & Search Bar & Bulk Actions */}
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div className='flex flex-wrap items-center gap-2'>
             {categoryTabList.map((cat) => (
@@ -318,6 +380,27 @@ export function Galleries() {
                 {cat}
               </Button>
             ))}
+
+            {selectedIds.length > 0 && (
+              <div className='flex items-center gap-2 ml-2 animate-in fade-in-50 duration-200'>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => setIsBulkDeletingOpen(true)}
+                  className='shadow-xs'
+                >
+                  <Trash2 className='mr-1.5 size-4' /> Delete Selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setSelectedIds([])}
+                  className='text-muted-foreground hover:text-foreground'
+                >
+                  <X className='mr-1 size-3.5' /> Deselect
+                </Button>
+              </div>
+            )}
           </div>
 
           <form
@@ -363,7 +446,18 @@ export function Galleries() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[70px]'>S.No</TableHead>
+                  {/* Checkbox Header */}
+                  <TableHead className='w-[44px] px-3 text-center'>
+                    <Checkbox
+                      checked={
+                        isAllSelected ? true : isSomeSelected ? 'indeterminate' : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label='Select all photos'
+                      className='translate-y-0.5'
+                    />
+                  </TableHead>
+                  <TableHead className='w-[60px]'>S.No</TableHead>
                   <TableHead className='w-[100px]'>Photo</TableHead>
                   <TableHead className='min-w-[220px]'>Title</TableHead>
                   <TableHead className='w-[160px]'>Category</TableHead>
@@ -373,113 +467,134 @@ export function Galleries() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {galleries.map((item, index) => (
-                  <TableRow key={item.id} className='hover:bg-muted/40'>
-                    {/* S.No */}
-                    <TableCell className='py-3 font-medium text-muted-foreground'>
-                      {(currentPage - 1) * perPage + index + 1}
-                    </TableCell>
-
-                    {/* Image Thumbnail */}
-                    <TableCell className='py-3'>
-                      <div
-                        className='relative group size-16 rounded-md overflow-hidden bg-muted border cursor-pointer'
-                        onClick={() => setPreviewImageUrl(getStorageUrl(item.image))}
-                        title='Click to view full image'
-                      >
-                        <img
-                          src={getStorageUrl(item.image)}
-                          alt={item.title}
-                          className='h-full w-full object-cover transition-transform group-hover:scale-110'
-                          onError={(e) => {
-                            ;(e.target as HTMLImageElement).src =
-                              'https://placehold.co/150x150?text=No+Img'
-                          }}
-                        />
-                        <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white'>
-                          <ExternalLink className='size-4' />
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    {/* Title */}
-                    <TableCell className='py-3'>
-                      <div className='font-semibold text-sm line-clamp-2' title={item.title}>
-                        {item.title}
-                      </div>
-                    </TableCell>
-
-                    {/* Category */}
-                    <TableCell className='py-3'>
-                      <Badge variant='outline' className='font-normal text-xs'>
-                        {typeof item.category === 'object' && item.category !== null
-                          ? item.category.name
-                          : (item.category ||
-                              categories.find(
-                                (c) => c.id === item.gallery_category_id
-                              )?.name ||
-                              'General')}
-                      </Badge>
-                    </TableCell>
-
-                    {/* Location */}
-                    <TableCell className='py-3 text-xs text-muted-foreground'>
-                      {item.location ? (
-                        <span className='flex items-center gap-1'>
-                          <MapPin className='size-3.5 text-primary shrink-0' />
-                          <span className='truncate'>{item.location}</span>
-                        </span>
-                      ) : (
-                        <span className='text-muted-foreground/60'>—</span>
-                      )}
-                    </TableCell>
-
-                    {/* Status & Switch */}
-                    <TableCell className='py-3'>
-                      <div className='flex items-center gap-2'>
-                        <Switch
-                          checked={item.is_active}
-                          onCheckedChange={() => handleToggleStatus(item)}
-                          aria-label='Toggle visibility'
-                        />
-                        <Badge
-                          variant={item.is_active ? 'default' : 'secondary'}
-                          className={
-                            item.is_active
-                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                              : 'text-muted-foreground text-[11px]'
+                {galleries.map((item, index) => {
+                  const isSelected = selectedIds.includes(item.id)
+                  return (
+                    <TableRow
+                      key={item.id}
+                      data-state={isSelected ? 'selected' : undefined}
+                      className={`hover:bg-muted/40 transition-colors ${
+                        isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''
+                      }`}
+                    >
+                      {/* Checkbox Cell */}
+                      <TableCell className='px-3 text-center'>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleToggleSelect(item.id, !!checked)
                           }
-                        >
-                          {item.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </TableCell>
+                          aria-label={`Select photo ${item.title}`}
+                          className='translate-y-0.5'
+                        />
+                      </TableCell>
 
-                    {/* Actions */}
-                    <TableCell className='py-3 text-end'>
-                      <div className='flex items-center justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8'
-                          onClick={() => openEditModal(item)}
-                          title='Edit'
+                      {/* S.No */}
+                      <TableCell className='py-3 font-medium text-muted-foreground'>
+                        {(currentPage - 1) * perPage + index + 1}
+                      </TableCell>
+
+                      {/* Image Thumbnail */}
+                      <TableCell className='py-3'>
+                        <div
+                          className='relative group size-16 rounded-md overflow-hidden bg-muted border cursor-pointer'
+                          onClick={() => setPreviewImageUrl(getStorageUrl(item.image))}
+                          title='Click to view full image'
                         >
-                          <Edit2 className='size-4' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
-                          onClick={() => setDeleteItem(item)}
-                          title='Delete'
-                        >
-                          <Trash2 className='size-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <img
+                            src={getStorageUrl(item.image)}
+                            alt={item.title}
+                            className='h-full w-full object-cover transition-transform group-hover:scale-110'
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).src =
+                                'https://placehold.co/150x150?text=No+Img'
+                            }}
+                          />
+                          <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white'>
+                            <ExternalLink className='size-4' />
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Title */}
+                      <TableCell className='py-3'>
+                        <div className='font-semibold text-sm line-clamp-2' title={item.title}>
+                          {item.title}
+                        </div>
+                      </TableCell>
+
+                      {/* Category */}
+                      <TableCell className='py-3'>
+                        <Badge variant='outline' className='font-normal text-xs'>
+                          {typeof item.category === 'object' && item.category !== null
+                            ? item.category.name
+                            : (item.category ||
+                                categories.find(
+                                  (c) => c.id === item.gallery_category_id
+                                )?.name ||
+                                'General')}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Location */}
+                      <TableCell className='py-3 text-xs text-muted-foreground'>
+                        {item.location ? (
+                          <span className='flex items-center gap-1'>
+                            <MapPin className='size-3.5 text-primary shrink-0' />
+                            <span className='truncate'>{item.location}</span>
+                          </span>
+                        ) : (
+                          <span className='text-muted-foreground/60'>—</span>
+                        )}
+                      </TableCell>
+
+                      {/* Status & Switch */}
+                      <TableCell className='py-3'>
+                        <div className='flex items-center gap-2'>
+                          <Switch
+                            checked={item.is_active}
+                            onCheckedChange={() => handleToggleStatus(item)}
+                            aria-label='Toggle visibility'
+                          />
+                          <Badge
+                            variant={item.is_active ? 'default' : 'secondary'}
+                            className={
+                              item.is_active
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
+                                : 'text-muted-foreground text-[11px]'
+                            }
+                          >
+                            {item.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className='py-3 text-end'>
+                        <div className='flex items-center justify-end gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8'
+                            onClick={() => openEditModal(item)}
+                            title='Edit'
+                          >
+                            <Edit2 className='size-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
+                            onClick={() => setDeleteItem(item)}
+                            title='Delete'
+                          >
+                            <Trash2 className='size-4' />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
 
@@ -638,7 +753,7 @@ export function Galleries() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <ConfirmDialog
         open={!!deleteItem}
         onOpenChange={(open) => !open && setDeleteItem(null)}
@@ -648,6 +763,19 @@ export function Galleries() {
         destructive
         isLoading={isDeleting}
         handleConfirm={handleDeleteConfirm}
+        className='sm:max-w-sm'
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isBulkDeletingOpen}
+        onOpenChange={setIsBulkDeletingOpen}
+        title='Delete Selected Photos'
+        desc={`Are you sure you want to permanently delete the ${selectedIds.length} selected photos? This action cannot be undone.`}
+        confirmText={`Delete ${selectedIds.length} Photos`}
+        destructive
+        isLoading={isBulkDeleting}
+        handleConfirm={handleBulkDeleteConfirm}
         className='sm:max-w-sm'
       />
     </>
