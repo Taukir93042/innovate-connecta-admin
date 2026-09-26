@@ -27,6 +27,7 @@ import { Route as AuthenticatedFeedbacksIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedGalleriesIndexRouteImport } from './routes/_authenticated/galleries/index'
 import { Route as AuthenticatedGalleryCategoriesIndexRouteImport } from './routes/_authenticated/gallery-categories/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
+import { Route as AuthenticatedSessionBookingsIndexRouteImport } from './routes/_authenticated/session-bookings/index'
 import { Route as AuthenticatedSessionCategoriesIndexRouteImport } from './routes/_authenticated/session-categories/index'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
@@ -133,6 +134,12 @@ const AuthenticatedHelpCenterIndexRoute =
     path: '/help-center/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSessionBookingsIndexRoute =
+  AuthenticatedSessionBookingsIndexRouteImport.update({
+    id: '/session-bookings/',
+    path: '/session-bookings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSessionCategoriesIndexRoute =
   AuthenticatedSessionCategoriesIndexRouteImport.update({
     id: '/session-categories/',
@@ -216,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/galleries/': typeof AuthenticatedGalleriesIndexRoute
   '/gallery-categories/': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/galleries': typeof AuthenticatedGalleriesIndexRoute
   '/gallery-categories': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/session-bookings': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories': typeof AuthenticatedSessionCategoriesIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -275,6 +284,7 @@ export interface FileRoutesById {
   '/_authenticated/galleries/': typeof AuthenticatedGalleriesIndexRoute
   '/_authenticated/gallery-categories/': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/_authenticated/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/galleries/'
     | '/gallery-categories/'
     | '/help-center/'
+    | '/session-bookings/'
     | '/session-categories/'
     | '/sessions/'
     | '/settings/'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/galleries'
     | '/gallery-categories'
     | '/help-center'
+    | '/session-bookings'
     | '/session-categories'
     | '/sessions'
     | '/settings'
@@ -364,6 +376,7 @@ export interface FileRouteTypes {
     | '/_authenticated/galleries/'
     | '/_authenticated/gallery-categories/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/session-bookings/'
     | '/_authenticated/session-categories/'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
@@ -513,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/session-bookings/': {
+      id: '/_authenticated/session-bookings/'
+      path: '/session-bookings'
+      fullPath: '/session-bookings/'
+      preLoaderRoute: typeof AuthenticatedSessionBookingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/session-categories/': {
       id: '/_authenticated/session-categories/'
       path: '/session-categories'
@@ -616,6 +636,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGalleriesIndexRoute: typeof AuthenticatedGalleriesIndexRoute
   AuthenticatedGalleryCategoriesIndexRoute: typeof AuthenticatedGalleryCategoriesIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedSessionBookingsIndexRoute: typeof AuthenticatedSessionBookingsIndexRoute
   AuthenticatedSessionCategoriesIndexRoute: typeof AuthenticatedSessionCategoriesIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
   AuthenticatedTestimonialsIndexRoute: typeof AuthenticatedTestimonialsIndexRoute
@@ -633,6 +654,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGalleryCategoriesIndexRoute:
     AuthenticatedGalleryCategoriesIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedSessionBookingsIndexRoute:
+    AuthenticatedSessionBookingsIndexRoute,
   AuthenticatedSessionCategoriesIndexRoute:
     AuthenticatedSessionCategoriesIndexRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
