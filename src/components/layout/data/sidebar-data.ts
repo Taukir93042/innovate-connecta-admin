@@ -1,4 +1,4 @@
-import {
+﻿import {
   LayoutDashboard,
   Users,
   Images,
@@ -6,6 +6,7 @@ import {
   MessageSquareQuote,
   MessageSquare,
   Presentation,
+  CalendarCheck,
   Mail,
   Layers,
 } from 'lucide-react'
@@ -62,6 +63,11 @@ export const sidebarData: SidebarData = {
           title: 'Sessions',
           url: '/sessions',
           icon: Presentation,
+        },
+        {
+          title: 'Seat Bookings',
+          url: '/session-bookings',
+          icon: CalendarCheck,
         },
         {
           title: 'Session Categories',
