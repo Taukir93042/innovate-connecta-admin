@@ -1,4 +1,4 @@
-﻿import {
+import {
   LayoutDashboard,
   Users,
   Images,
@@ -6,6 +6,7 @@
   MessageSquareQuote,
   MessageSquare,
   Presentation,
+  GraduationCap,
   CalendarCheck,
   Mail,
   Layers,
@@ -63,6 +64,11 @@ export const sidebarData: SidebarData = {
           title: 'Sessions',
           url: '/sessions',
           icon: Presentation,
+        },
+        {
+          title: 'Instructors',
+          url: '/instructors',
+          icon: GraduationCap,
         },
         {
           title: 'Seat Bookings',

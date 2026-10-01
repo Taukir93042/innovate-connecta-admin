@@ -67,7 +67,7 @@ export function SessionBookings() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [perPage, setPerPage] = useState(10)
+  const [perPage] = useState(10)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 

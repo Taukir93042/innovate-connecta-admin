@@ -1,3 +1,4 @@
+import { type InstructorItem } from './admin-instructors'
 import { apiClient } from '@/lib/api-client'
 
 export interface SessionImageItem {
@@ -14,6 +15,8 @@ export interface SessionImageItem {
 export interface InfoCardItem {
   title: string
   description: string
+  original_price?: string
+  price?: string
 }
 
 export interface SessionCategoryObj {
@@ -27,10 +30,18 @@ export interface SessionItem {
   title: string
   slug: string
   session_category_id?: number | null
+  instructor_id?: number | null
+  instructor?: InstructorItem | null
   category?: string | SessionCategoryObj | null
   section_one_content: string
   section_two_content?: string | null
   info_cards?: InfoCardItem[] | null
+  instructor_name?: string | null
+  instructor_designation?: string | null
+  instructor_experience?: string | null
+  instructor_bio?: string | null
+  instructor_image?: string | null
+  instructor_image_url?: string | null
   is_featured: boolean
   is_active: boolean
   image_url?: string | null

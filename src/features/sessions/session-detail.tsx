@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Trash2,
+  UserCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -51,17 +52,12 @@ export function SessionDetail() {
       return
     }
 
-    async function loadSession() {
+    async function fetchSession() {
       try {
         setIsLoading(true)
         const res = await adminSessionService.getSession(sessionId!)
-        if (res.status && res.data) {
-          setSession(res.data)
-        } else {
-          toast.error('Session not found.')
-          navigate({ to: '/sessions' })
-        }
-      } catch (err: unknown) {
+        setSession(res.data)
+      } catch (err) {
         toast.error(getApiErrorMessage(err))
         navigate({ to: '/sessions' })
       } finally {
@@ -69,18 +65,16 @@ export function SessionDetail() {
       }
     }
 
-    loadSession()
-  }, [sessionId])
+    fetchSession()
+  }, [sessionId, navigate])
 
   const handleToggleStatus = async () => {
     if (!session) return
     try {
       await adminSessionService.toggleStatus(session.id)
       setSession((prev) => (prev ? { ...prev, is_active: !prev.is_active } : null))
-      toast.success(
-        `Session ${!session.is_active ? 'activated' : 'deactivated'} successfully.`
-      )
-    } catch (err: unknown) {
+      toast.success('Status updated successfully')
+    } catch (err) {
       toast.error(getApiErrorMessage(err))
     }
   }
@@ -90,22 +84,20 @@ export function SessionDetail() {
     try {
       await adminSessionService.toggleFeatured(session.id)
       setSession((prev) => (prev ? { ...prev, is_featured: !prev.is_featured } : null))
-      toast.success(
-        `Session ${!session.is_featured ? 'marked as featured' : 'unmarked from featured'}.`
-      )
-    } catch (err: unknown) {
+      toast.success('Featured status updated successfully')
+    } catch (err) {
       toast.error(getApiErrorMessage(err))
     }
   }
 
   const handleDelete = async () => {
     if (!session) return
-    setIsDeleting(true)
     try {
+      setIsDeleting(true)
       await adminSessionService.deleteSession(session.id)
-      toast.success('Session deleted successfully.')
+      toast.success('Session deleted successfully')
       navigate({ to: '/sessions' })
-    } catch (err: unknown) {
+    } catch (err) {
       toast.error(getApiErrorMessage(err))
     } finally {
       setIsDeleting(false)
@@ -115,73 +107,70 @@ export function SessionDetail() {
 
   if (isLoading) {
     return (
-      <div className='flex min-h-screen items-center justify-center gap-3'>
+      <div className='flex h-96 items-center justify-center'>
         <Loader2 className='h-8 w-8 animate-spin text-primary' />
-        <span className='text-sm text-muted-foreground'>Loading session details...</span>
       </div>
     )
   }
 
-  if (!session) return null
+  if (!session) {
+    return null
+  }
 
-  const coverImage =
-    session.images?.find((img) => img.is_primary)?.image_url ||
-    (session.images?.[0]?.image ? getStorageUrl(session.images[0].image) : null) ||
-    session.image_url
-
-  const infoCards = Array.isArray(session.info_cards) ? session.info_cards : []
   const categoryName = getCategoryName(session.category)
+  const coverImage = session.image_url ? getStorageUrl(session.image_url) : null
+  const infoCards = Array.isArray(session.info_cards) ? session.info_cards : []
 
   return (
     <>
       <Header fixed>
-        <Search className='me-auto' />
-        <ThemeSwitch />
-        <ProfileDropdown />
+        <Search />
+        <div className='ml-auto flex items-center space-x-4'>
+          <ThemeSwitch />
+          <ProfileDropdown />
+        </div>
       </Header>
 
-      <Main className='flex flex-1 flex-col gap-4 sm:gap-6 pb-12'>
-        {/* Top Action Bar */}
-        <div className='flex flex-wrap items-center justify-between gap-3 border-b pb-4'>
-          <div className='flex items-center gap-3'>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => navigate({ to: '/sessions' })}
-              className='gap-1.5'
-            >
-              <ArrowLeft className='h-4 w-4' />
-              Back to Sessions
-            </Button>
-            <div>
-              <div className='flex items-center gap-2'>
-                <Badge variant='outline' className='font-medium text-xs'>
-                  {categoryName}
+      <Main>
+        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8'
+                onClick={() => navigate({ to: '/sessions' })}
+              >
+                <ArrowLeft className='h-4 w-4' />
+              </Button>
+              <h1 className='text-2xl font-bold tracking-tight'>{session.title}</h1>
+            </div>
+            <div className='flex items-center gap-2 ml-10'>
+              <Badge variant='outline'>{categoryName}</Badge>
+              {session.is_featured && (
+                <Badge variant='secondary' className='gap-1'>
+                  <Sparkles className='h-3 w-3 text-amber-500' /> Featured
                 </Badge>
-                {session.is_featured && (
-                  <Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-xs'>
-                    <Sparkles className='h-3 w-3 text-amber-500 fill-amber-500' /> Featured
-                  </Badge>
-                )}
-                <Badge
-                  variant={session.is_active ? 'default' : 'secondary'}
-                  className={
-                    session.is_active
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs'
-                      : 'text-xs'
-                  }
-                >
-                  {session.is_active ? 'Active' : 'Hidden'}
+              )}
+              {session.is_active ? (
+                <Badge variant='default' className='bg-green-600 hover:bg-green-700'>
+                  Active
                 </Badge>
-              </div>
-              <h1 className='text-xl font-bold tracking-tight md:text-2xl mt-1'>
-                {session.title}
-              </h1>
+              ) : (
+                <Badge variant='secondary'>Inactive</Badge>
+              )}
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => navigate({ to: '/sessions/create', search: { id: session.id } as any })}
+              className='gap-1.5'
+            >
+              <Edit2 className='h-4 w-4' /> Edit
+            </Button>
             <Button
               variant='destructive'
               size='sm'
@@ -190,35 +179,22 @@ export function SessionDetail() {
             >
               <Trash2 className='h-4 w-4' /> Delete
             </Button>
-            <Button
-              size='sm'
-              onClick={() =>
-                navigate({
-                  to: '/sessions/create',
-                  search: { id: session.id } as any,
-                })
-              }
-              className='gap-1.5'
-            >
-              <Edit2 className='h-4 w-4' /> Edit Session
-            </Button>
           </div>
         </div>
 
-        {/* 2-Column Responsive Layout */}
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
           {/* Main Content Column (8 cols) */}
-          <div className='lg:col-span-8 flex flex-col gap-6'>
+          <div className='lg:col-span-8 space-y-6'>
             {/* Section 1: Overview & Introduction */}
             <Card>
               <CardHeader>
                 <CardTitle className='text-base font-semibold'>
-                  Section 1: Overview & Introduction
+                  Section 1: Overview &amp; Introduction
                 </CardTitle>
                 <CardDescription>Comprehensive summary and description of the session.</CardDescription>
               </CardHeader>
               <CardContent>
-                {/<[a-z][\s\S]*>/i.test(session.section_one_content) ? (
+                {/<[a-z][sS]*>/i.test(session.section_one_content) ? (
                   <div
                     className='prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_th]:border [&_th]:p-2 [&_td]:border [&_td]:p-2 [&_a]:text-primary [&_a]:underline'
                     dangerouslySetInnerHTML={{ __html: session.section_one_content }}
@@ -236,14 +212,14 @@ export function SessionDetail() {
               <Card>
                 <CardHeader>
                   <CardTitle className='text-base font-semibold'>
-                    Section 2: Curriculum, Key Deliverables & Outcomes
+                    Section 2: Curriculum, Key Deliverables &amp; Outcomes
                   </CardTitle>
                   <CardDescription>
                     Detailed agenda breakdown, deliverables, certifications, and takeaways.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/<[a-z][\s\S]*>/i.test(session.section_two_content) ? (
+                  {/<[a-z][sS]*>/i.test(session.section_two_content) ? (
                     <div
                       className='prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_th]:border [&_th]:p-2 [&_td]:border [&_td]:p-2 [&_a]:text-primary [&_a]:underline'
                       dangerouslySetInnerHTML={{ __html: session.section_two_content }}
@@ -257,12 +233,14 @@ export function SessionDetail() {
               </Card>
             )}
 
-            {/* Highlights & Info Cards (Shifted below Session Content & Agenda) */}
+
+
+            {/* Highlights & Info Cards */}
             {infoCards.length > 0 && (
               <Card>
                 <CardHeader className='pb-3'>
                   <CardTitle className='text-base font-semibold flex items-center gap-2'>
-                    <Layers className='h-4 w-4 text-primary' /> Key Highlights & Details
+                    <Layers className='h-4 w-4 text-primary' /> Key Highlights &amp; Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -312,10 +290,71 @@ export function SessionDetail() {
               </CardContent>
             </Card>
 
+            {/* Assigned Instructor (Right Sidebar) */}
+            {(session.instructor || session.instructor_name) && (() => {
+              const instName = session.instructor?.name || session.instructor_name || ''
+              const instRole = session.instructor?.designation || session.instructor_designation || ''
+              const instExp = session.instructor?.experience || session.instructor_experience || ''
+              const instBio = session.instructor?.bio || session.instructor_bio || ''
+              const instImg = session.instructor?.image_url || session.instructor_image_url || null
+
+              return (
+                <Card>
+                  <CardHeader className='pb-2'>
+                    <CardTitle className='text-sm font-semibold flex items-center gap-1.5'>
+                      <UserCircle className='h-4 w-4 text-primary' /> Assigned Instructor
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className='space-y-3'>
+                    <div className='flex items-center gap-3'>
+                      <div className='size-11 rounded-full overflow-hidden border bg-muted flex items-center justify-center shrink-0 text-primary font-bold text-xs shadow-xs'>
+                        {instImg ? (
+                          <img
+                            src={getStorageUrl(instImg)}
+                            alt={instName || 'Instructor'}
+                            className='size-full object-cover'
+                          />
+                        ) : (
+                          instName
+                            ? instName
+                                .split(' ')
+                                .map((n: string) => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : 'IN'
+                        )}
+                      </div>
+                      <div className='space-y-0.5 min-w-0'>
+                        <div className='text-xs font-bold text-foreground truncate'>
+                          {instName || 'Instructor'}
+                        </div>
+                        {instRole && (
+                          <div className='text-[11px] font-medium text-primary truncate'>
+                            {instRole}
+                          </div>
+                        )}
+                        {instExp && (
+                          <div className='text-[10px] text-muted-foreground truncate'>
+                            {instExp}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {instBio && (
+                      <p className='text-xs text-foreground/80 line-clamp-3 leading-relaxed border-t pt-2'>
+                        {instBio}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })()}
+
             {/* Status & Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle className='text-sm font-semibold'>Visibility & Settings</CardTitle>
+                <CardTitle className='text-sm font-semibold'>Visibility &amp; Settings</CardTitle>
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='flex items-center justify-between rounded-lg border p-3'>
