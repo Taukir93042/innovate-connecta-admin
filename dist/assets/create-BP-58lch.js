@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-D3jfb0Ew.js";import{t}from"./recorded-session-form-B0PFq2Na.js";var n=e(),r=()=>(0,n.jsx)(t,{isEdit:!1});export{r as component};

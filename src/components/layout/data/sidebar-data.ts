@@ -1,5 +1,6 @@
 import {
   Video,
+  ReceiptText,
   LayoutDashboard,
   Users,
   Images,
@@ -70,6 +71,11 @@ export const sidebarData: SidebarData = {
           title: 'Recorded Sessions',
           url: '/recorded-sessions',
           icon: Video,
+        },
+        {
+          title: 'Course Orders',
+          url: '/recorded-orders',
+          icon: ReceiptText,
         },
         {
           title: 'Instructors',
