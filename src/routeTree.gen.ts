@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
@@ -28,6 +29,9 @@ import { Route as AuthenticatedGalleriesIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedGalleryCategoriesIndexRouteImport } from './routes/_authenticated/gallery-categories/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedInstructorsIndexRouteImport } from './routes/_authenticated/instructors/index'
+import { Route as AuthenticatedRecordedSessionsIndexRouteImport } from './routes/_authenticated/recorded-sessions/index'
+import { Route as AuthenticatedRecordedSessionsRecordedSessionIdRouteImport } from './routes/_authenticated/recorded-sessions/$recordedSessionId'
+import { Route as AuthenticatedRecordedSessionsCreateRouteImport } from './routes/_authenticated/recorded-sessions/create'
 import { Route as AuthenticatedSessionBookingsIndexRouteImport } from './routes/_authenticated/session-bookings/index'
 import { Route as AuthenticatedSessionCategoriesIndexRouteImport } from './routes/_authenticated/session-categories/index'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -47,6 +51,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: '/(auth)/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authOtpRoute = authOtpRouteImport.update({
@@ -141,6 +150,24 @@ const AuthenticatedInstructorsIndexRoute =
     path: '/instructors/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRecordedSessionsIndexRoute =
+  AuthenticatedRecordedSessionsIndexRouteImport.update({
+    id: '/recorded-sessions/',
+    path: '/recorded-sessions/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecordedSessionsRecordedSessionIdRoute =
+  AuthenticatedRecordedSessionsRecordedSessionIdRouteImport.update({
+    id: '/recorded-sessions/$recordedSessionId',
+    path: '/recorded-sessions/$recordedSessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecordedSessionsCreateRoute =
+  AuthenticatedRecordedSessionsCreateRouteImport.update({
+    id: '/recorded-sessions/create',
+    path: '/recorded-sessions/create',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSessionBookingsIndexRoute =
   AuthenticatedSessionBookingsIndexRouteImport.update({
     id: '/session-bookings/',
@@ -211,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/sign-in-2': typeof authSignIn2Route
@@ -220,6 +248,8 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/recorded-sessions/$recordedSessionId': typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
+  '/recorded-sessions/create': typeof AuthenticatedRecordedSessionsCreateRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/create': typeof AuthenticatedSessionsCreateRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -231,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/gallery-categories/': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/instructors/': typeof AuthenticatedInstructorsIndexRoute
+  '/recorded-sessions/': typeof AuthenticatedRecordedSessionsIndexRoute
   '/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -240,6 +271,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/sign-in-2': typeof authSignIn2Route
@@ -250,6 +282,8 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/recorded-sessions/$recordedSessionId': typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
+  '/recorded-sessions/create': typeof AuthenticatedRecordedSessionsCreateRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/create': typeof AuthenticatedSessionsCreateRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -261,6 +295,7 @@ export interface FileRoutesByTo {
   '/gallery-categories': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/instructors': typeof AuthenticatedInstructorsIndexRoute
+  '/recorded-sessions': typeof AuthenticatedRecordedSessionsIndexRoute
   '/session-bookings': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories': typeof AuthenticatedSessionCategoriesIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
@@ -273,6 +308,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
+  '/(auth)/login': typeof authLoginRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/sign-in-2': typeof authSignIn2Route
@@ -283,6 +319,8 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/recorded-sessions/$recordedSessionId': typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
+  '/_authenticated/recorded-sessions/create': typeof AuthenticatedRecordedSessionsCreateRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/create': typeof AuthenticatedSessionsCreateRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -294,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/gallery-categories/': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/instructors/': typeof AuthenticatedInstructorsIndexRoute
+  '/_authenticated/recorded-sessions/': typeof AuthenticatedRecordedSessionsIndexRoute
   '/_authenticated/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/_authenticated/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -307,6 +346,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/forgot-password'
+    | '/login'
     | '/otp'
     | '/sign-in'
     | '/sign-in-2'
@@ -316,6 +356,8 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/recorded-sessions/$recordedSessionId'
+    | '/recorded-sessions/create'
     | '/sessions/$sessionId'
     | '/sessions/create'
     | '/settings/account'
@@ -327,6 +369,7 @@ export interface FileRouteTypes {
     | '/gallery-categories/'
     | '/help-center/'
     | '/instructors/'
+    | '/recorded-sessions/'
     | '/session-bookings/'
     | '/session-categories/'
     | '/sessions/'
@@ -336,6 +379,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
+    | '/login'
     | '/otp'
     | '/sign-in'
     | '/sign-in-2'
@@ -346,6 +390,8 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/recorded-sessions/$recordedSessionId'
+    | '/recorded-sessions/create'
     | '/sessions/$sessionId'
     | '/sessions/create'
     | '/settings/account'
@@ -357,6 +403,7 @@ export interface FileRouteTypes {
     | '/gallery-categories'
     | '/help-center'
     | '/instructors'
+    | '/recorded-sessions'
     | '/session-bookings'
     | '/session-categories'
     | '/sessions'
@@ -368,6 +415,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
+    | '/(auth)/login'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
     | '/(auth)/sign-in-2'
@@ -378,6 +426,8 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/recorded-sessions/$recordedSessionId'
+    | '/_authenticated/recorded-sessions/create'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/create'
     | '/_authenticated/settings/account'
@@ -389,6 +439,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gallery-categories/'
     | '/_authenticated/help-center/'
     | '/_authenticated/instructors/'
+    | '/_authenticated/recorded-sessions/'
     | '/_authenticated/session-bookings/'
     | '/_authenticated/session-categories/'
     | '/_authenticated/sessions/'
@@ -400,6 +451,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
+  authLoginRoute: typeof authLoginRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
   authSignIn2Route: typeof authSignIn2Route
@@ -425,6 +477,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof authForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/otp': {
@@ -546,6 +605,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInstructorsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recorded-sessions/': {
+      id: '/_authenticated/recorded-sessions/'
+      path: '/recorded-sessions'
+      fullPath: '/recorded-sessions/'
+      preLoaderRoute: typeof AuthenticatedRecordedSessionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recorded-sessions/$recordedSessionId': {
+      id: '/_authenticated/recorded-sessions/$recordedSessionId'
+      path: '/recorded-sessions/$recordedSessionId'
+      fullPath: '/recorded-sessions/$recordedSessionId'
+      preLoaderRoute: typeof AuthenticatedRecordedSessionsRecordedSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recorded-sessions/create': {
+      id: '/_authenticated/recorded-sessions/create'
+      path: '/recorded-sessions/create'
+      fullPath: '/recorded-sessions/create'
+      preLoaderRoute: typeof AuthenticatedRecordedSessionsCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/session-bookings/': {
       id: '/_authenticated/session-bookings/'
       path: '/session-bookings'
@@ -649,6 +729,8 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedRecordedSessionsRecordedSessionIdRoute: typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
+  AuthenticatedRecordedSessionsCreateRoute: typeof AuthenticatedRecordedSessionsCreateRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsCreateRoute: typeof AuthenticatedSessionsCreateRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
@@ -657,6 +739,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGalleryCategoriesIndexRoute: typeof AuthenticatedGalleryCategoriesIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedInstructorsIndexRoute: typeof AuthenticatedInstructorsIndexRoute
+  AuthenticatedRecordedSessionsIndexRoute: typeof AuthenticatedRecordedSessionsIndexRoute
   AuthenticatedSessionBookingsIndexRoute: typeof AuthenticatedSessionBookingsIndexRoute
   AuthenticatedSessionCategoriesIndexRoute: typeof AuthenticatedSessionCategoriesIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -667,6 +750,10 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedRecordedSessionsRecordedSessionIdRoute:
+    AuthenticatedRecordedSessionsRecordedSessionIdRoute,
+  AuthenticatedRecordedSessionsCreateRoute:
+    AuthenticatedRecordedSessionsCreateRoute,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsCreateRoute: AuthenticatedSessionsCreateRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
@@ -676,6 +763,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedGalleryCategoriesIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedInstructorsIndexRoute: AuthenticatedInstructorsIndexRoute,
+  AuthenticatedRecordedSessionsIndexRoute:
+    AuthenticatedRecordedSessionsIndexRoute,
   AuthenticatedSessionBookingsIndexRoute:
     AuthenticatedSessionBookingsIndexRoute,
   AuthenticatedSessionCategoriesIndexRoute:
@@ -691,6 +780,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
+  authLoginRoute: authLoginRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,
   authSignIn2Route: authSignIn2Route,

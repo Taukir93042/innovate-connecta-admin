@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_authenticated')({
     const { accessToken, user, fetchProfile } = useAuthStore.getState().auth
     if (!accessToken) {
       throw redirect({
-        to: '/sign-in',
+        to: '/login',
         search: {
           redirect: location.href,
         },

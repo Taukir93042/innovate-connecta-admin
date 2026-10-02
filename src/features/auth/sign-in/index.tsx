@@ -11,7 +11,8 @@ import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
-  const { redirect } = useSearch({ from: '/(auth)/sign-in' })
+  const search = useSearch({ strict: false }) as { redirect?: string }
+  const redirect = search?.redirect
 
   return (
     <AuthLayout>

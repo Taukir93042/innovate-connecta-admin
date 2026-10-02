@@ -48,6 +48,10 @@ import {
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PaginationBar } from '@/components/pagination-bar'
 
+export function Instructors() {
+  return <InstructorsFeature />
+}
+
 export function InstructorsFeature() {
   const [instructors, setInstructors] = useState<InstructorItem[]>([])
   const [loading, setLoading] = useState(true)

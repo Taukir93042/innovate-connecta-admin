@@ -1,4 +1,5 @@
 import {
+  Video,
   LayoutDashboard,
   Users,
   Images,
@@ -64,6 +65,11 @@ export const sidebarData: SidebarData = {
           title: 'Sessions',
           url: '/sessions',
           icon: Presentation,
+        },
+        {
+          title: 'Recorded Sessions',
+          url: '/recorded-sessions',
+          icon: Video,
         },
         {
           title: 'Instructors',

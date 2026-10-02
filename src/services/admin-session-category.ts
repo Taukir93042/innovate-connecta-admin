@@ -1,9 +1,13 @@
 import { apiClient } from '@/lib/api-client'
 
+export type CategoryType = 'all' | 'live' | 'recorded'
+
 export interface SessionCategoryItem {
   id: number
   name: string
   slug: string
+  type?: CategoryType
+  color?: string
   is_active: boolean
   sessions_count?: number
   created_at?: string
@@ -25,10 +29,22 @@ export interface SessionCategoryListResponse {
 }
 
 export const adminSessionCategoryService = {
+  async getSessionCategories(params?: {
+    is_active?: boolean
+    all?: boolean
+    search?: string
+    type?: string
+    page?: number
+    per_page?: number
+  }): Promise<SessionCategoryListResponse> {
+    return this.getCategories(params)
+  },
+
   async getCategories(params?: {
     is_active?: boolean
     all?: boolean
     search?: string
+    type?: string
     page?: number
     per_page?: number
   }): Promise<SessionCategoryListResponse> {
@@ -44,6 +60,8 @@ export const adminSessionCategoryService = {
   async createCategory(payload: {
     name: string
     slug?: string
+    type?: string
+    color?: string
     is_active?: boolean
   }) {
     const response = await apiClient.post('/admin/session-categories', payload)
@@ -52,7 +70,13 @@ export const adminSessionCategoryService = {
 
   async updateCategory(
     id: number,
-    payload: { name?: string; slug?: string; is_active?: boolean }
+    payload: {
+      name?: string
+      slug?: string
+      type?: string
+      color?: string
+      is_active?: boolean
+    }
   ) {
     const response = await apiClient.put(
       `/admin/session-categories/${id}`,
