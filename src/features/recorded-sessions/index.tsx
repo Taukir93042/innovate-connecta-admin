@@ -51,6 +51,11 @@ import {
   adminSessionCategoryService,
   type SessionCategoryItem,
 } from '@/services/admin-session-category'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search as SearchHeader } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { RecordedSessionDetail } from './recorded-session-detail'
 
 export function RecordedSessions() {
@@ -179,7 +184,14 @@ export function RecordedSessions() {
   }
 
   return (
-    <div className='p-6 space-y-6 max-w-[1400px] mx-auto pb-20'>
+    <>
+      <Header fixed>
+        <SearchHeader className='me-auto' />
+        <ThemeSwitch />
+        <ProfileDropdown />
+      </Header>
+
+      <Main className='flex flex-1 flex-col gap-4 sm:gap-6 w-full'>
       {/* Header */}
       <div className='flex flex-wrap items-center justify-between gap-4'>
         <div>
@@ -327,7 +339,7 @@ export function RecordedSessions() {
 
                   {/* Title & Heading */}
                   <TableCell>
-                    <div className='max-w-[320px]'>
+                    <div className='min-w-[240px]'>
                       <div className='font-semibold text-sm leading-tight text-foreground line-clamp-1'>
                         {session.title}
                       </div>
@@ -508,6 +520,7 @@ export function RecordedSessions() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </Main>
+    </>
   )
 }
