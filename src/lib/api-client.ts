@@ -39,7 +39,7 @@ apiClient.interceptors.response.use(
   }
 )
 
-export function getApiErrorMessage(error: unknown): string {
+export function getApiErrorMessage(error: unknown, fallback: string = "An unexpected error occurred. Please try again."): string {
   if (error instanceof AxiosError) {
     if (error.response?.data) {
       const data = error.response.data as {
@@ -60,5 +60,5 @@ export function getApiErrorMessage(error: unknown): string {
       return error.message
     }
   }
-  return 'An unexpected error occurred. Please try again.'
+  return fallback
 }

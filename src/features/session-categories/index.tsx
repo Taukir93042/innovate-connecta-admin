@@ -1,4 +1,4 @@
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect } from 'react'
 import {
   FolderTree,
   Plus,
@@ -64,7 +64,6 @@ export function SessionCategoriesFeature() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [perPage, setPerPage] = useState(10)
-  const [isPending, startTransition] = useTransition()
 
   // Selected for Bulk Delete
   const [selectedIds, setSelectedIds] = useState<number[]>([])

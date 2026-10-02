@@ -1,14 +1,12 @@
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Search as SearchIcon,
   Edit2,
   Trash2,
   Loader2,
-  Check,
   Eye,
   GraduationCap,
-  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -59,7 +57,6 @@ export function InstructorsFeature() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-  const [isPending, startTransition] = useTransition()
 
   // Selection for bulk actions
   const [selectedIds, setSelectedIds] = useState<number[]>([])
@@ -489,6 +486,8 @@ export function InstructorsFeature() {
             <PaginationBar
               currentPage={page}
               totalPages={totalPages}
+              totalItems={totalCount}
+              perPage={10}
               onPageChange={(p) => setPage(p)}
             />
           </div>

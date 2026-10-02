@@ -10,7 +10,6 @@ import {
   Layers,
   Upload,
   IndianRupee,
-  UserCircle,
   GraduationCap,
   ExternalLink,
 } from 'lucide-react'
@@ -18,7 +17,6 @@ import { toast } from 'sonner'
 import {
   adminSessionService,
   getCategoryName,
-  type SessionItem,
   type InfoCardItem,
 } from '@/services/admin-sessions'
 import {

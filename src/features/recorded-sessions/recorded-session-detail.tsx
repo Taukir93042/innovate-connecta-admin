@@ -10,13 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
-  Video,
   Clock,
   BookOpen,
-  IndianRupee,
   GraduationCap,
   Sparkles,
-  ExternalLink,
 } from 'lucide-react'
 import { type RecordedSessionItem } from '@/services/admin-recorded-sessions'
 
