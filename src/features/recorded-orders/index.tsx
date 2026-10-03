@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import {
   Search as SearchIcon,
@@ -62,6 +63,7 @@ import {
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 export function RecordedOrders() {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState<RecordedOrderItem[]>([])
   const [stats, setStats] = useState<RecordedOrderStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -457,9 +459,14 @@ export function RecordedOrders() {
                     <TableCell>
                       <div className='flex flex-col gap-0.5'>
                         <div className='flex items-center gap-1.5'>
-                          <span className='font-mono font-semibold text-xs text-primary'>
+                          <button
+                            type='button'
+                            onClick={() => navigate({ to: '/recorded-orders/$orderId', params: { orderId: String(order.id) } })}
+                            className='font-mono font-semibold text-xs text-primary hover:underline text-left'
+                            title='View Order Details'
+                          >
                             {order.order_id}
-                          </span>
+                          </button>
                           <button
                             type='button'
                             onClick={() => handleCopy(order.order_id, `order-${order.id}`)}
@@ -566,8 +573,8 @@ export function RecordedOrders() {
                           variant='ghost'
                           size='icon'
                           className='size-8'
-                          onClick={() => setViewItem(order)}
-                          title='View Invoice & Details'
+                          onClick={() => navigate({ to: '/recorded-orders/$orderId', params: { orderId: String(order.id) } })}
+                          title='View Order Details Page'
                         >
                           <Eye className='size-4' />
                         </Button>
