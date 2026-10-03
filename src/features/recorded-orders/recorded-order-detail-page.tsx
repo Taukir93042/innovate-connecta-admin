@@ -29,6 +29,7 @@ import {
   type RecordedOrderItem,
 } from '@/services/admin-recorded-orders'
 import { getApiErrorMessage } from '@/lib/api-client'
+import { getStorageUrl } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -64,6 +65,7 @@ export function RecordedOrderDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [imgError, setImgError] = useState(false)
 
   useEffect(() => {
     if (!orderId || isNaN(orderId)) {
@@ -444,17 +446,25 @@ export function RecordedOrderDetailPage() {
               </CardHeader>
               <CardContent className='p-6'>
                 <div className='flex flex-col sm:flex-row items-start sm:items-center gap-4'>
-                  {order.recorded_session?.thumbnail ? (
-                    <img
-                      src={order.recorded_session.thumbnail}
-                      alt={order.session_title}
-                      className='w-full sm:w-40 h-24 rounded-xl object-cover border bg-muted shadow-sm shrink-0'
-                    />
-                  ) : (
-                    <div className='w-full sm:w-40 h-24 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-muted border flex items-center justify-center text-primary shadow-sm shrink-0'>
-                      <Video className='size-8' />
-                    </div>
-                  )}
+                  {(() => {
+                    const rawThumbnail = order.recorded_session?.thumbnail_url || order.recorded_session?.thumbnail;
+                    const thumbnailSrc = rawThumbnail ? getStorageUrl(rawThumbnail) : null;
+                    if (thumbnailSrc && !imgError) {
+                      return (
+                        <img
+                          src={thumbnailSrc}
+                          alt={order.session_title}
+                          onError={() => setImgError(true)}
+                          className='w-full sm:w-40 h-24 rounded-xl object-cover border bg-muted shadow-sm shrink-0'
+                        />
+                      );
+                    }
+                    return (
+                      <div className='w-full sm:w-40 h-24 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-muted border flex items-center justify-center text-primary shadow-sm shrink-0'>
+                        <Video className='size-8' />
+                      </div>
+                    );
+                  })()}
                   <div className='space-y-2 flex-1'>
                     <h3 className='text-base font-bold text-foreground'>{order.session_title}</h3>
                     {order.recorded_session?.slug && (

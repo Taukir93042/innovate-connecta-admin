@@ -24,6 +24,7 @@ export interface RecordedOrderItem {
     title: string
     slug: string
     thumbnail?: string | null
+    thumbnail_url?: string | null
     duration_minutes?: number | null
     original_price?: number | string | null
     discount_price?: number | string | null
