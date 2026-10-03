@@ -626,22 +626,7 @@ export function RecordedSessionForm({
                 />
               </div>
 
-              {/* Featured Toggle */}
-              <div className='flex items-center justify-between p-3 rounded-lg border bg-card'>
-                <div className='space-y-0.5'>
-                  <Label htmlFor='is_featured' className='text-sm font-medium cursor-pointer'>
-                    Featured Course
-                  </Label>
-                  <p className='text-xs text-muted-foreground'>
-                    Highlight in featured spots and priority carousels.
-                  </p>
-                </div>
-                <Switch
-                  id='is_featured'
-                  checked={isFeatured}
-                  onCheckedChange={setIsFeatured}
-                />
-              </div>
+
             </CardContent>
           </Card>
 
