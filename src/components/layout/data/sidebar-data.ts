@@ -63,7 +63,7 @@ export const sidebarData: SidebarData = {
           icon: MessageSquare,
         },
         {
-          title: 'Sessions',
+          title: 'Live Sessions',
           url: '/sessions',
           icon: Presentation,
         },

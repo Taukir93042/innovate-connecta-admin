@@ -320,7 +320,7 @@ export function SessionForm() {
                 <ArrowLeft className='h-4 w-4' />
               </Button>
               <h1 className='text-2xl font-bold tracking-tight'>
-                {editingId ? 'Edit Session' : 'Create New Session'}
+                {editingId ? 'Edit Live Session' : 'Create New Live Session'}
               </h1>
             </div>
             <p className='text-sm text-muted-foreground ml-10'>

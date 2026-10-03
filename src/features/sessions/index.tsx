@@ -217,7 +217,7 @@ export function Sessions() {
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div>
             <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-              Sessions Management
+              Live Sessions Management
             </h1>
             <p className='text-sm text-muted-foreground'>
               Manage interactive workshops, campus drives, corporate trainings, and live sessions.
@@ -234,7 +234,7 @@ export function Sessions() {
               className='gap-2'
             >
               <Plus className='h-4 w-4' />
-              Add Session
+              Add Live Session
             </Button>
           </div>
         </div>
@@ -250,7 +250,7 @@ export function Sessions() {
                 setCurrentPage(1)
               }}
             >
-              All Sessions
+              All Live Sessions
             </Button>
 
             <Select
@@ -323,7 +323,7 @@ export function Sessions() {
         ) : sessions.length === 0 ? (
           <div className='flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
             <Calendar className='h-12 w-12 text-muted-foreground/60 mb-2' />
-            <h3 className='text-lg font-semibold'>No sessions found</h3>
+            <h3 className='text-lg font-semibold'>No live sessions found</h3>
             <p className='text-sm text-muted-foreground max-w-sm mb-4'>
               {searchQuery
                 ? 'No sessions matched your search criteria.'
