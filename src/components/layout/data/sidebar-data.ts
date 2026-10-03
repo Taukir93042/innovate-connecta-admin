@@ -1,15 +1,15 @@
 import {
-  Video,
-  ReceiptText,
   LayoutDashboard,
   Users,
+  GraduationCap,
   Images,
   FolderTree,
   MessageSquareQuote,
   MessageSquare,
   Presentation,
-  GraduationCap,
+  Video,
   CalendarCheck,
+  ReceiptText,
   Mail,
   Layers,
 } from 'lucide-react'
@@ -42,6 +42,16 @@ export const sidebarData: SidebarData = {
           url: '/users',
           icon: Users,
         },
+      ],
+    },
+    {
+      title: 'Content',
+      items: [
+        {
+          title: 'Instructors',
+          url: '/instructors',
+          icon: GraduationCap,
+        },
         {
           title: 'Gallery',
           url: '/galleries',
@@ -62,6 +72,11 @@ export const sidebarData: SidebarData = {
           url: '/feedbacks',
           icon: MessageSquare,
         },
+      ],
+    },
+    {
+      title: 'Sessions',
+      items: [
         {
           title: 'Live Sessions',
           url: '/sessions',
@@ -73,25 +88,30 @@ export const sidebarData: SidebarData = {
           icon: Video,
         },
         {
-          title: 'Course Orders',
-          url: '/recorded-orders',
-          icon: ReceiptText,
-        },
-        {
-          title: 'Instructors',
-          url: '/instructors',
-          icon: GraduationCap,
+          title: 'Session Categories',
+          url: '/session-categories',
+          icon: FolderTree,
         },
         {
           title: 'Seat Bookings',
           url: '/session-bookings',
           icon: CalendarCheck,
         },
+      ],
+    },
+    {
+      title: 'Orders',
+      items: [
         {
-          title: 'Session Categories',
-          url: '/session-categories',
-          icon: FolderTree,
+          title: 'Course Orders',
+          url: '/recorded-orders',
+          icon: ReceiptText,
         },
+      ],
+    },
+    {
+      title: 'Communication',
+      items: [
         {
           title: 'Contacts',
           url: '/contacts',
