@@ -215,7 +215,7 @@ export function Dashboard() {
               </Button>
               <Button
                 size='sm'
-                onClick={() => navigate({ to: '/sessions/create' })}
+                onClick={() => navigate({ to: '/live-sessions/create' })}
                 className='h-9 gap-1.5 shadow-sm'
               >
                 <Plus className='size-4' />
@@ -234,7 +234,7 @@ export function Dashboard() {
           {/* Card 1: Sessions */}
           <Card
             className='group relative cursor-pointer overflow-hidden border transition-all duration-200 hover:border-primary/50 hover:shadow-md'
-            onClick={() => navigate({ to: '/sessions' })}
+            onClick={() => navigate({ to: '/live-sessions' })}
           >
             <CardHeader className='flex flex-row items-center justify-between pb-2 space-y-0'>
               <span className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
@@ -552,7 +552,7 @@ export function Dashboard() {
                 variant='ghost'
                 size='sm'
                 className='text-xs h-8 gap-1'
-                onClick={() => navigate({ to: '/sessions' })}
+                onClick={() => navigate({ to: '/live-sessions' })}
               >
                 View All <ChevronRight className='size-3.5' />
               </Button>
@@ -582,7 +582,7 @@ export function Dashboard() {
                         className='group flex items-center justify-between py-3 hover:bg-muted/30 px-2 rounded-lg transition-colors cursor-pointer'
                         onClick={() =>
                           navigate({
-                            to: '/sessions/$sessionId',
+                            to: '/live-sessions/$sessionId',
                             params: { sessionId: String(s.id) },
                           })
                         }

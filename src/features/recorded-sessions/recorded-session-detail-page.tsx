@@ -3,12 +3,10 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Edit2,
-  Sparkles,
   Image as ImageIcon,
   Loader2,
   Trash2,
   UserCircle,
-  ExternalLink,
   Video,
   Clock,
   BookOpen,
@@ -91,19 +89,6 @@ export function RecordedSessionDetailPage() {
     }
   }
 
-  const handleToggleFeatured = async () => {
-    if (!session) return
-    try {
-      const res = await adminRecordedSessionService.toggleRecordedSessionFeatured(session.id)
-      if (res.data) {
-        setSession((prev) => (prev ? { ...prev, is_featured: res.data!.is_featured } : null))
-        toast.success(res.message || 'Featured status updated successfully')
-      }
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to toggle featured status'))
-    }
-  }
-
   const handleDelete = async () => {
     if (!session) return
     try {
@@ -142,10 +127,7 @@ export function RecordedSessionDetailPage() {
 
   const categoryName = session.category?.name || 'General'
   const coverImage = session.thumbnail_url || (session.thumbnail ? getStorageUrl(session.thumbnail) : null)
-  const publicWebUrl = session.slug
-    ? `http://localhost:3000/recorded-sessions/${session.slug}`
-    : `http://localhost:3000/recorded-sessions/${session.id}`
-
+  
   return (
     <>
       <Header fixed>
@@ -174,11 +156,7 @@ export function RecordedSessionDetailPage() {
                 <h1 className='text-xl font-bold tracking-tight text-foreground sm:text-2xl line-clamp-1'>
                   {session.title}
                 </h1>
-                {session.is_featured && (
-                  <Badge variant='secondary' className='gap-1 border-amber-500/30 bg-amber-500/10 text-amber-500'>
-                    <Sparkles className='size-3' /> Featured
-                  </Badge>
-                )}
+                
                 <Badge
                   variant='outline'
                   className={
@@ -532,19 +510,6 @@ export function RecordedSessionDetailPage() {
                   <Switch
                     checked={session.is_active}
                     onCheckedChange={handleToggleStatus}
-                  />
-                </div>
-
-                <div className='flex items-center justify-between rounded-lg border p-3'>
-                  <div>
-                    <div className='text-sm font-medium'>Featured Course</div>
-                    <div className='text-xs text-muted-foreground'>
-                      Highlight on home &amp; explore
-                    </div>
-                  </div>
-                  <Switch
-                    checked={session.is_featured}
-                    onCheckedChange={handleToggleFeatured}
                   />
                 </div>
 

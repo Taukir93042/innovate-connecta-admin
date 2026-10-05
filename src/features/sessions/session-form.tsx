@@ -2,16 +2,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearch, Link } from '@tanstack/react-router'
 import {
   ArrowLeft,
-  Sparkles,
   Loader2,
   Plus,
   X,
   CheckCircle2,
-  Layers,
-  Upload,
-  IndianRupee,
-  GraduationCap,
   ExternalLink,
+  FileText,
+  Download,
+  IndianRupee,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -74,15 +73,20 @@ export function SessionForm() {
   const [instructorId, setInstructorId] = useState<string>('none')
   const [sectionOne, setSectionOne] = useState('')
   const [sectionTwo, setSectionTwo] = useState('')
+  const [price, setPrice] = useState('49')
+  const [originalPrice, setOriginalPrice] = useState('99')
   const [infoCards, setInfoCards] = useState<InfoCardItem[]>([
-    { title: 'Participation Fee', description: '₹49', original_price: '₹99' },
     { title: 'Duration', description: '2 Hours' },
     { title: 'Mode', description: 'Online (Zoom)' },
   ])
-  const [isFeatured, setIsFeatured] = useState(false)
   const [isActive, setIsActive] = useState(true)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // PDF Resource state
+  const [resourceFile, setResourceFile] = useState<File | null>(null)
+  const [existingResource, setExistingResource] = useState<any>(null)
+  const [removeResource, setRemoveResource] = useState(false)
 
   // Fetch categories & instructors from database
   async function loadData() {
@@ -146,7 +150,6 @@ export function SessionForm() {
 
         setSectionOne(session.section_one_content || '')
         setSectionTwo(session.section_two_content || '')
-        setIsFeatured(Boolean(session.is_featured))
         setIsActive(Boolean(session.is_active))
 
         if (session.image_url) {
@@ -154,89 +157,117 @@ export function SessionForm() {
         }
 
         if (session.info_cards && Array.isArray(session.info_cards)) {
-          setInfoCards(session.info_cards)
+          const feeCard = session.info_cards.find((c: any) =>
+            /fee|price|cost|participation|offer/i.test(c.label || c.title || c.key || '')
+          )
+          if (feeCard) {
+            setPrice(((feeCard as any).price || (feeCard as any).value || feeCard.description || '').replace(/^₹/, ''))
+            setOriginalPrice((feeCard.original_price || '').replace(/^₹/, ''))
+          }
+          const badges = session.info_cards.filter((c: any) =>
+            !/fee|price|cost|participation|offer/i.test(c.label || c.title || c.key || '')
+          )
+          if (badges.length > 0) {
+            setInfoCards(badges)
+          }
+        }
+
+        if (session.resource) {
+          setExistingResource(session.resource)
         }
       } catch (err) {
         toast.error(getApiErrorMessage(err))
-        navigate({ to: '/sessions' })
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchSession()
-  }, [editingId, navigate])
+  }, [editingId])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setImageFile(file)
-      setImagePreview(URL.createObjectURL(file))
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
-  // Info Cards / Highlights Handlers
-  const addInfoCardRow = () => {
-    setInfoCards((prev) => [...prev, { title: '', description: '' }])
+  const handleResourceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+        toast.error('Only PDF files (.pdf) are allowed.')
+        e.target.value = ''
+        return
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error('PDF file size must not exceed 20 MB.')
+        e.target.value = ''
+        return
+      }
+      setResourceFile(file)
+      setRemoveResource(false)
+    }
   }
 
-  const updateInfoCard = (index: number, field: keyof InfoCardItem, value: string) => {
-    setInfoCards((prev) => {
-      const copy = [...prev]
-      copy[index] = { ...copy[index], [field]: value }
-      return copy
-    })
+  const handleAddCard = () => {
+    setInfoCards((prev) => [
+      ...prev,
+      { title: 'New Highlight', description: 'Highlight Detail' },
+    ])
   }
 
-  const removeInfoCardRow = (index: number) => {
-    setInfoCards((prev) => prev.filter((_, i) => i !== index))
+  const handleRemoveCard = (index: number) => {
+    setInfoCards((prev) => prev.filter((_, idx) => idx !== index))
   }
 
-  const isFeeRow = (titleStr: string) => {
-    const t = (titleStr || '').toLowerCase()
-    return (
-      t.includes('fee') ||
-      t.includes('price') ||
-      t.includes('cost') ||
-      t.includes('participation') ||
-      t.includes('offer')
+  const handleCardChange = (
+    index: number,
+    field: keyof InfoCardItem,
+    value: string
+  ) => {
+    setInfoCards((prev) =>
+      prev.map((card, idx) =>
+        idx === index ? { ...card, [field]: value } : card
+      )
     )
   }
 
   const selectedInstructor = instructorsList.find(
-    (i) => String(i.id) === instructorId
+    (ins) => String(ins.id) === instructorId
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!title.trim()) {
-      toast.error('Session title is required.')
-      return
-    }
-
-    if (!category.trim()) {
-      toast.error('Please select a valid session category.')
+      toast.error('Session title is required')
       return
     }
 
     if (!sectionOne.trim()) {
-      toast.error('Section 1 (Introduction & Overview) is required.')
+      toast.error('Section 1 Content (Overview) is required')
       return
     }
 
     try {
       setIsSubmitting(true)
       const formData = new FormData()
-
       formData.append('title', title.trim())
-      if (slug.trim()) formData.append('slug', slug.trim())
+      formData.append('slug', slug.trim())
 
-      const matchedCat = categoriesList.find(
+      // Find matched category ID from database list
+      const matchedCategory = categoriesList.find(
         (c) => c.name.toLowerCase() === category.toLowerCase()
       )
-      if (matchedCat) {
-        formData.append('session_category_id', String(matchedCat.id))
+      if (matchedCategory) {
+        formData.append('session_category_id', String(matchedCategory.id))
+        formData.append('category', matchedCategory.name)
       } else {
         formData.append('category', category.trim())
       }
@@ -262,26 +293,56 @@ export function SessionForm() {
 
       formData.append('section_one_content', sectionOne)
       formData.append('section_two_content', sectionTwo)
-      formData.append('is_featured', isFeatured ? '1' : '0')
+      formData.append('is_featured', '0')
       formData.append('is_active', isActive ? '1' : '0')
 
       if (imageFile) {
         formData.append('image', imageFile)
       }
 
-      // Filter valid info cards
-      const validInfoCards = infoCards.filter((c) => c.title.trim() || c.description.trim())
+      // PDF Resource notes
+      if (resourceFile) {
+        formData.append('resource_file', resourceFile)
+      }
+      if (removeResource) {
+        formData.append('remove_resource', '1')
+      }
+
+      // Build combined info cards array with separated Pricing & Badges
+      const validInfoCards: InfoCardItem[] = []
+      if (price.trim()) {
+        const cleanPrice = price.trim().startsWith('₹') ? price.trim() : `₹${price.trim()}`
+        const cleanOrig = originalPrice.trim()
+          ? (originalPrice.trim().startsWith('₹') ? originalPrice.trim() : `₹${originalPrice.trim()}`)
+          : undefined
+        validInfoCards.push({
+          title: 'Participation Fee',
+          description: cleanPrice,
+          price: cleanPrice,
+          original_price: cleanOrig,
+        })
+      }
+
+      infoCards.forEach((c) => {
+        if (c.title.trim() || c.description.trim()) {
+          validInfoCards.push({
+            title: c.title.trim(),
+            description: c.description.trim(),
+          })
+        }
+      })
+
       formData.append('info_cards', JSON.stringify(validInfoCards))
 
       if (editingId) {
         await adminSessionService.updateSession(editingId, formData)
-        toast.success('Session updated successfully!')
+        toast.success('Live session updated successfully!')
       } else {
         await adminSessionService.createSession(formData)
-        toast.success('Session created successfully!')
+        toast.success('Live session created successfully!')
       }
 
-      navigate({ to: '/sessions' })
+      navigate({ to: '/live-sessions' })
     } catch (err) {
       toast.error(getApiErrorMessage(err))
     } finally {
@@ -307,33 +368,35 @@ export function SessionForm() {
         </div>
       </Header>
 
-      <Main>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <div className='space-y-1'>
-            <div className='flex items-center gap-2'>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='h-8 w-8'
-                onClick={() => navigate({ to: '/sessions' })}
-              >
-                <ArrowLeft className='h-4 w-4' />
-              </Button>
-              <h1 className='text-2xl font-bold tracking-tight'>
+      <Main className='space-y-6 pb-12'>
+        {/* Top Header */}
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-3'>
+            <Button
+              variant='outline'
+              size='icon'
+              className='size-9'
+              onClick={() => navigate({ to: '/live-sessions' })}
+              title='Back to Sessions'
+            >
+              <ArrowLeft className='size-4' />
+            </Button>
+            <div>
+              <h1 className='text-2xl font-bold tracking-tight text-foreground'>
                 {editingId ? 'Edit Live Session' : 'Create New Live Session'}
               </h1>
+              <p className='text-xs text-muted-foreground mt-0.5'>
+                {editingId
+                  ? 'Update curriculum, resources & instructors.'
+                  : 'Create and publish a comprehensive interactive session.'}
+              </p>
             </div>
-            <p className='text-sm text-muted-foreground ml-10'>
-              {editingId
-                ? 'Update session details, assigned instructor, info cards, and banner image.'
-                : 'Create and publish a comprehensive interactive session.'}
-            </p>
           </div>
 
           <div className='flex items-center gap-2'>
             <Button
               variant='outline'
-              onClick={() => navigate({ to: '/sessions' })}
+              onClick={() => navigate({ to: '/live-sessions' })}
               disabled={isSubmitting}
             >
               Cancel
@@ -341,25 +404,32 @@ export function SessionForm() {
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className='gap-2'
+              className='gap-2 shadow-xs'
             >
-              {isSubmitting && <Loader2 className='h-4 w-4 animate-spin' />}
-              <CheckCircle2 className='h-4 w-4' />
-              {editingId ? 'Save Changes' : 'Publish Session'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className='h-4 w-4' />
+                  {editingId ? 'Update Session' : 'Publish Session'}
+                </>
+              )}
             </Button>
           </div>
         </div>
 
+        {/* 2-Column Responsive Grid Form */}
         <form onSubmit={handleSubmit} className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Main Content Column (8 cols) */}
-          <div className='lg:col-span-8 space-y-6'>
-            {/* Card 1: Core Details */}
+          {/* Main 8-Column Area: Content & Details */}
+          <div className='lg:col-span-8 flex flex-col gap-6'>
+            {/* Card 1: Core Session Info */}
             <Card>
               <CardHeader>
                 <CardTitle className='text-base font-semibold'>Session Details</CardTitle>
-                <CardDescription>
-                  Title, URL slug, and category classification.
-                </CardDescription>
+                <CardDescription>Title, URL slug, and category classification.</CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='space-y-2'>
@@ -380,16 +450,20 @@ export function SessionForm() {
                     <Label htmlFor='category' className='text-sm font-medium'>
                       Category <span className='text-destructive'>*</span>
                     </Label>
-                    <Select value={category} onValueChange={(val) => setCategory(val)}>
-                      <SelectTrigger id='category'>
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger id='category' className='w-full'>
                         <SelectValue placeholder='Select category' />
                       </SelectTrigger>
                       <SelectContent>
-                        {categoriesList.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.name}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
+                        {categoriesList.length > 0 ? (
+                          categoriesList.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value='Tech &amp; Data'>Tech &amp; Data</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -409,7 +483,7 @@ export function SessionForm() {
               </CardContent>
             </Card>
 
-            {/* Card 2: Overview & Introduction */}
+            {/* Card 2: Section 1 Content */}
             <Card>
               <CardHeader>
                 <CardTitle className='text-base font-semibold'>
@@ -419,146 +493,133 @@ export function SessionForm() {
                   High-level introductory pitch and comprehensive session description.
                 </CardDescription>
               </CardHeader>
-              <CardContent className='space-y-6'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <Label htmlFor='section-one' className='text-sm font-medium'>
-                      Section 1: Overview &amp; Introduction
+              <CardContent>
+                <FCKEditor
+                  value={sectionOne}
+                  onChange={setSectionOne}
+                  placeholder='Describe the overview, key objectives, prerequisites, and goals...'
+                />
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Section 2 Content */}
+            <Card>
+              <CardHeader>
+                <CardTitle className='text-base font-semibold'>
+                  Section 2: Detailed Curriculum / Key Highlights
+                </CardTitle>
+                <CardDescription>
+                  In-depth roadmap, modules, agenda topics, and outcomes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FCKEditor
+                  value={sectionTwo}
+                  onChange={setSectionTwo}
+                  placeholder='List the weekly timeline, bulleted takeaways, hands-on projects, certification details...'
+                />
+              </CardContent>
+            </Card>
+
+            {/* Card 4: Dedicated Pricing & Fee Section */}
+            <Card>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-base font-semibold flex items-center gap-2'>
+                  <IndianRupee className='h-4 w-4 text-emerald-500' /> Pricing &amp; Participation Fee
+                </CardTitle>
+                <CardDescription>
+                  Set the participation fee and optional strikethrough original price.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                  <div className='space-y-1.5'>
+                    <Label htmlFor='live_session_price' className='text-xs uppercase font-semibold text-muted-foreground'>
+                      Participation Fee / Offer Price (₹) *
                     </Label>
-                    <span className='text-[11px] text-muted-foreground'>FCKeditor</span>
+                    <Input
+                      id='live_session_price'
+                      placeholder='e.g., 49 or 1499'
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                    />
                   </div>
-                  <FCKEditor
-                    value={sectionOne}
-                    onChange={(html) => setSectionOne(html)}
-                    placeholder='Describe the overview, key objectives, prerequisites, and goals...'
-                    minHeight='220px'
-                  />
+                  <div className='space-y-1.5'>
+                    <Label htmlFor='live_session_original_price' className='text-xs uppercase font-semibold text-muted-foreground'>
+                      Original Price (₹) (Optional strikethrough)
+                    </Label>
+                    <Input
+                      id='live_session_original_price'
+                      placeholder='e.g., 99 or 2999'
+                      value={originalPrice}
+                      onChange={(e) => setOriginalPrice(e.target.value)}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Card 3: Key Highlights & Info Cards */}
+            {/* Card 5: Feature Highlights & Badges */}
             <Card>
               <CardHeader className='flex flex-row items-center justify-between pb-3'>
                 <div>
                   <CardTitle className='text-base font-semibold flex items-center gap-2'>
-                    <Layers className='h-4 w-4 text-primary' />
-                    Key Highlights &amp; Session Info Cards
+                    <Sparkles className='h-4 w-4 text-primary' /> Session Feature Highlights &amp; Badges
                   </CardTitle>
                   <CardDescription>
-                    Provide key metadata like Participation Fee (with Discount &amp; Original price), Duration, Schedule, and Mode.
+                    Key feature badges displayed on the session hero banner (e.g., Duration, Mode, Schedule).
                   </CardDescription>
                 </div>
                 <Button
                   type='button'
                   variant='outline'
                   size='sm'
-                  onClick={addInfoCardRow}
-                  className='gap-1 h-8 text-xs'
+                  onClick={handleAddCard}
+                  className='gap-1.5'
                 >
-                  <Plus className='h-3.5 w-3.5' /> Add Card
+                  <Plus className='size-3.5' /> Add Badge
                 </Button>
               </CardHeader>
-              <CardContent className='space-y-4'>
-                {infoCards.length === 0 ? (
-                  <div className='text-center py-6 border border-dashed rounded-lg text-muted-foreground text-sm'>
-                    No info cards added. Click "Add Card" to add highlights like Fee, Date, Mode.
-                  </div>
-                ) : (
-                  infoCards.map((card, idx) => {
-                    const isFee = isFeeRow(card.title)
-                    return (
-                      <div
-                        key={idx}
-                        className='p-3.5 rounded-lg border bg-muted/20 relative space-y-3'
+              <CardContent className='space-y-3'>
+                {infoCards.map((card, idx) => (
+                  <div
+                    key={idx}
+                    className='grid grid-cols-1 md:grid-cols-12 gap-3 p-3 rounded-lg border bg-muted/20 items-end'
+                  >
+                    <div className='md:col-span-5 space-y-1'>
+                      <Label className='text-xs font-semibold text-muted-foreground'>Badge Title / Label</Label>
+                      <Input
+                        placeholder='e.g., Duration, Mode, Target Audience'
+                        value={card.title}
+                        onChange={(e) => handleCardChange(idx, 'title', e.target.value)}
+                        className='h-8 text-xs'
+                      />
+                    </div>
+
+                    <div className='md:col-span-6 space-y-1'>
+                      <Label className='text-xs font-semibold text-muted-foreground'>Badge Value / Detail</Label>
+                      <Input
+                        placeholder='e.g., 2 Hours, Online (Zoom), College Students'
+                        value={card.description}
+                        onChange={(e) => handleCardChange(idx, 'description', e.target.value)}
+                        className='h-8 text-xs'
+                      />
+                    </div>
+
+                    <div className='md:col-span-1 flex justify-end'>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => handleRemoveCard(idx)}
+                        className='size-8 text-muted-foreground hover:text-destructive'
+                        title='Remove badge'
                       >
-                        <div className='flex items-start gap-3'>
-                          <div className='grid grid-cols-1 md:grid-cols-2 gap-3 flex-1'>
-                            <div className='space-y-1.5'>
-                              <Label className='text-xs font-medium text-muted-foreground'>
-                                Label / Title
-                              </Label>
-                              <Input
-                                placeholder='e.g., Participation Fee, Date, Mode'
-                                value={card.title}
-                                onChange={(e) => updateInfoCard(idx, 'title', e.target.value)}
-                                className='h-9 text-sm'
-                              />
-                            </div>
-
-                            <div className='space-y-1.5'>
-                              <Label className='text-xs font-medium text-muted-foreground'>
-                                {isFee ? 'Discounted / Offer Price' : 'Value / Details'}
-                              </Label>
-                              <Input
-                                placeholder={isFee ? 'e.g., ₹49 or Free' : 'e.g., 2 Hours'}
-                                value={card.description}
-                                onChange={(e) => updateInfoCard(idx, 'description', e.target.value)}
-                                className='h-9 text-sm'
-                              />
-                            </div>
-
-                            {isFee ? (
-                              <div className='space-y-1.5 md:col-span-2 bg-background/50 p-2.5 rounded-md border'>
-                                <Label className='text-xs font-medium text-muted-foreground flex items-center gap-1'>
-                                  <IndianRupee className='h-3.5 w-3.5 text-amber-500' />
-                                  Original Strikethrough Price (Optional)
-                                </Label>
-                                <Input
-                                  placeholder='e.g., ₹99'
-                                  value={card.original_price || ''}
-                                  onChange={(e) =>
-                                    updateInfoCard(idx, 'original_price', e.target.value)
-                                  }
-                                  className='h-8 text-xs'
-                                />
-                              </div>
-                            ) : null}
-                          </div>
-
-                          <Button
-                            type='button'
-                            variant='ghost'
-                            size='icon'
-                            className='size-8 mt-5 text-destructive hover:bg-destructive/10'
-                            onClick={() => removeInfoCardRow(idx)}
-                            title='Remove card'
-                          >
-                            <X className='size-4' />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card 4: Curriculum & Deliverables */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-base font-semibold'>
-                  Section 2: Curriculum, Key Deliverables &amp; Outcomes
-                </CardTitle>
-                <CardDescription>
-                  Breakdown of agenda modules, project work, certifications, interview opportunities...
-                </CardDescription>
-              </CardHeader>
-              <CardContent className='space-y-6'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <Label htmlFor='section-two' className='text-sm font-medium'>
-                      Section 2: Curriculum, Key Deliverables &amp; Outcomes
-                    </Label>
-                    <span className='text-[11px] text-muted-foreground'>FCKeditor</span>
+                        <X className='size-4' />
+                      </Button>
+                    </div>
                   </div>
-                  <FCKEditor
-                    value={sectionTwo}
-                    onChange={(html) => setSectionTwo(html)}
-                    placeholder='Breakdown of agenda modules, project work, certifications, interview opportunities...'
-                    minHeight='190px'
-                  />
-                </div>
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -569,7 +630,7 @@ export function SessionForm() {
             <Card>
               <CardHeader>
                 <CardTitle className='text-base font-semibold'>Visibility &amp; Settings</CardTitle>
-                <CardDescription>Control publication and home page features.</CardDescription>
+                <CardDescription>Control publication on the live website.</CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/20'>
@@ -585,26 +646,6 @@ export function SessionForm() {
                     id='is-active-switch'
                     checked={isActive}
                     onCheckedChange={setIsActive}
-                  />
-                </div>
-
-                <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/20'>
-                  <div className='space-y-0.5'>
-                    <Label
-                      htmlFor='is-featured-switch'
-                      className='text-sm font-medium cursor-pointer flex items-center gap-1.5'
-                    >
-                      <Sparkles className='h-3.5 w-3.5 text-amber-500' />
-                      Featured on Home
-                    </Label>
-                    <p className='text-xs text-muted-foreground'>
-                      Showcase prominently on landing page banner.
-                    </p>
-                  </div>
-                  <Switch
-                    id='is-featured-switch'
-                    checked={isFeatured}
-                    onCheckedChange={setIsFeatured}
                   />
                 </div>
 
@@ -630,7 +671,7 @@ export function SessionForm() {
                     type='button'
                     variant='outline'
                     className='w-full'
-                    onClick={() => navigate({ to: '/sessions' })}
+                    onClick={() => navigate({ to: '/live-sessions' })}
                     disabled={isSubmitting}
                   >
                     Cancel
@@ -639,144 +680,173 @@ export function SessionForm() {
               </CardContent>
             </Card>
 
-            {/* Card: Assigned Instructor (Right Sidebar) */}
+            {/* Card 2: Attached PDF Study Resource (Notes) */}
+            <Card className='border-red-500/20 shadow-xs'>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-base font-semibold flex items-center gap-2'>
+                  <FileText className='h-4 w-4 text-red-500' /> Session PDF Resource
+                </CardTitle>
+                <CardDescription className='text-xs'>
+                  Attach 1 PDF notes file (max 20 MB) for enrolled students.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                {existingResource && !removeResource ? (
+                  <div className='p-3 rounded-lg border bg-muted/40 space-y-2.5'>
+                    <div className='flex items-start justify-between gap-2'>
+                      <div className='flex items-center gap-2.5 min-w-0'>
+                        <div className='p-2 rounded bg-red-500/10 text-red-500 flex-shrink-0'>
+                          <FileText className='h-4 w-4' />
+                        </div>
+                        <div className='min-w-0'>
+                          <p className='text-xs font-semibold truncate text-foreground'>
+                            {existingResource.file_name}
+                          </p>
+                          <p className='text-[11px] text-muted-foreground uppercase font-mono mt-0.5'>
+                            PDF {existingResource.file_size ? `• ${existingResource.file_size}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type='button'
+                        onClick={() => {
+                          setRemoveResource(true)
+                          setResourceFile(null)
+                        }}
+                        className='text-muted-foreground hover:text-destructive p-1 rounded transition'
+                        title='Remove attached PDF'
+                      >
+                        <X className='h-4 w-4' />
+                      </button>
+                    </div>
+
+                    {existingResource.file_url && (
+                      <a
+                        href={existingResource.file_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-medium'
+                      >
+                        <Download className='h-3.5 w-3.5' /> Preview / Download Current PDF
+                      </a>
+                    )}
+
+                    <div className='pt-2 border-t space-y-1.5'>
+                      <Label htmlFor='replace-live-pdf-input' className='text-xs text-muted-foreground'>
+                        Upload Replacement PDF:
+                      </Label>
+                      <Input
+                        id='replace-live-pdf-input'
+                        type='file'
+                        accept='.pdf,application/pdf'
+                        onChange={handleResourceFileChange}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className='space-y-2'>
+                    <Label htmlFor='resource-live-pdf-input' className='text-xs font-semibold'>
+                      Upload PDF Notes File
+                    </Label>
+                    <Input
+                      id='resource-live-pdf-input'
+                      type='file'
+                      accept='.pdf,application/pdf'
+                      onChange={handleResourceFileChange}
+                    />
+                    <p className='text-[11px] text-muted-foreground'>
+                      Single PDF file up to 20 MB. Auto-unlocked for students who register.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Assigned Instructor */}
             <Card>
               <CardHeader className='pb-3'>
                 <div className='flex items-center justify-between'>
-                  <CardTitle className='text-base font-semibold flex items-center gap-2'>
-                    <GraduationCap className='h-4 w-4 text-primary' />
-                    Instructor
-                  </CardTitle>
+                  <CardTitle className='text-base font-semibold'>Instructor</CardTitle>
                   <Link
                     to='/instructors'
-                    className='text-xs font-semibold text-primary hover:underline flex items-center gap-1'
+                    className='text-xs text-primary hover:underline inline-flex items-center gap-1 font-medium'
                   >
-                    Manage <ExternalLink className='h-3 w-3' />
+                    Manage <ExternalLink className='size-3' />
                   </Link>
                 </div>
-                <CardDescription className='text-xs'>
-                  Assign instructor from Instructors module.
-                </CardDescription>
+                <CardDescription>Assign instructor from Instructors module.</CardDescription>
               </CardHeader>
-              <CardContent className='space-y-3'>
-                <div className='space-y-1.5'>
-                  <Label htmlFor='instructor-select' className='text-xs font-medium'>
+              <CardContent className='space-y-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='instructor' className='text-xs font-semibold'>
                     Select Instructor
                   </Label>
                   <Select value={instructorId} onValueChange={setInstructorId}>
-                    <SelectTrigger id='instructor-select' className='h-9 text-xs bg-background'>
-                      <SelectValue placeholder='Choose an instructor...' />
+                    <SelectTrigger id='instructor' className='w-full'>
+                      <SelectValue placeholder='Select an instructor' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='none'>None (No instructor)</SelectItem>
-                      {instructorsList.map((inst) => (
-                        <SelectItem key={inst.id} value={String(inst.id)}>
-                          {inst.name} {inst.designation ? `• ${inst.designation}` : ''}
+                      <SelectItem value='none'>None (No Instructor)</SelectItem>
+                      {instructorsList.map((ins) => (
+                        <SelectItem key={ins.id} value={String(ins.id)}>
+                          {ins.name} {ins.designation ? `(${ins.designation})` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Instructor Profile Card Preview */}
                 {selectedInstructor && (
-                  <div className='p-3 rounded-lg border bg-muted/20 flex items-start gap-3 mt-2'>
-                    <Avatar className='h-10 w-10 border shadow-xs shrink-0'>
-                      {selectedInstructor.image_url && (
-                        <AvatarImage
-                          src={getStorageUrl(selectedInstructor.image_url)}
-                          alt={selectedInstructor.name}
-                        />
-                      )}
-                      <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
-                        {selectedInstructor.name
-                          .split(' ')
-                          .map((w) => w[0])
-                          .filter(Boolean)
-                          .join('')
-                          .toUpperCase()
-                          .slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className='space-y-0.5 flex-1 min-w-0'>
-                      <div className='font-bold text-xs text-foreground truncate'>
-                        {selectedInstructor.name}
+                  <div className='p-3.5 rounded-xl border bg-muted/30 space-y-2'>
+                    <div className='flex items-center gap-3'>
+                      <Avatar className='size-10 border shadow-xs'>
+                        <AvatarImage src={getStorageUrl(selectedInstructor.image_url)} />
+                        <AvatarFallback className='text-xs font-bold'>
+                          {selectedInstructor.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className='min-w-0'>
+                        <div className='text-sm font-semibold text-foreground truncate'>
+                          {selectedInstructor.name}
+                        </div>
+                        <div className='text-xs text-primary font-medium truncate'>
+                          {selectedInstructor.designation || 'Instructor'}
+                        </div>
                       </div>
-                      {selectedInstructor.designation && (
-                        <div className='text-[11px] font-medium text-primary truncate'>
-                          {selectedInstructor.designation}
-                        </div>
-                      )}
-                      {selectedInstructor.experience && (
-                        <div className='text-[10px] text-muted-foreground truncate'>
-                          {selectedInstructor.experience}
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Card 2: Cover / Banner Image */}
+            {/* Card 4: Cover Image */}
             <Card>
-              <CardHeader>
-                <CardTitle className='text-base font-semibold'>Session Banner Image</CardTitle>
-                <CardDescription>
-                  Upload high resolution banner (JPEG, PNG, WebP up to 5MB).
-                </CardDescription>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-base font-semibold'>Cover Banner Image</CardTitle>
+                <CardDescription>Session hero background / card banner image.</CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
-                {imagePreview ? (
-                  <div className='relative rounded-lg overflow-hidden border bg-muted group h-48 w-full flex items-center justify-center'>
+                <div className='space-y-2'>
+                  <Label htmlFor='image' className='text-xs font-semibold'>
+                    Upload Banner
+                  </Label>
+                  <Input
+                    id='image'
+                    type='file'
+                    accept='image/*'
+                    onChange={handleImageChange}
+                  />
+                </div>
+
+                {imagePreview && (
+                  <div className='relative aspect-video w-full rounded-lg overflow-hidden border bg-muted shadow-xs'>
                     <img
                       src={imagePreview}
-                      alt='Banner preview'
+                      alt='Session preview'
                       className='h-full w-full object-cover'
                     />
-                    <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2'>
-                      <Label
-                        htmlFor='image-upload-input'
-                        className='bg-white text-black text-xs font-semibold py-1.5 px-3 rounded-md cursor-pointer hover:bg-white/90 shadow'
-                      >
-                        Change Image
-                      </Label>
-                      {imageFile && (
-                        <Button
-                          type='button'
-                          variant='destructive'
-                          size='sm'
-                          className='h-8 text-xs'
-                          onClick={() => {
-                            setImageFile(null)
-                            setImagePreview(null)
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
                   </div>
-                ) : (
-                  <Label
-                    htmlFor='image-upload-input'
-                    className='flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/30 transition-colors'
-                  >
-                    <Upload className='h-8 w-8 text-muted-foreground mb-2' />
-                    <span className='text-sm font-medium'>Click to upload banner</span>
-                    <span className='text-xs text-muted-foreground mt-1'>
-                      Recommended ratio 16:9 (e.g., 1280x720)
-                    </span>
-                  </Label>
                 )}
-
-                <Input
-                  id='image-upload-input'
-                  type='file'
-                  accept='image/*'
-                  className='hidden'
-                  onChange={handleImageChange}
-                />
               </CardContent>
             </Card>
           </div>

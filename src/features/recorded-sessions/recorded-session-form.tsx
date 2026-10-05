@@ -71,7 +71,7 @@ export function RecordedSessionForm({
     initialData?.session_category_id ? String(initialData.session_category_id) : ''
   )
   const [instructorId, setInstructorId] = useState<string>(
-    initialData?.instructor_id ? String(initialData.instructor_id) : ''
+    initialData?.instructor_id ? String(initialData.instructor_id) : 'none'
   )
   const [duration, setDuration] = useState(initialData?.duration || '')
   const [lessons, setLessons] = useState(initialData?.lessons || '')
@@ -116,7 +116,7 @@ export function RecordedSessionForm({
       setSlug(initialData.slug || '')
       setHeading(initialData.heading || '')
       setCategoryId(initialData.session_category_id ? String(initialData.session_category_id) : '')
-      setInstructorId(initialData.instructor_id ? String(initialData.instructor_id) : '')
+      setInstructorId(initialData.instructor_id ? String(initialData.instructor_id) : 'none')
       setDuration(initialData.duration || '')
       setLessons(initialData.lessons || '')
       setOriginalPrice(initialData.original_price || '')
@@ -216,7 +216,11 @@ export function RecordedSessionForm({
       if (slug.trim()) formData.append('slug', slug.trim())
       if (heading.trim()) formData.append('heading', heading.trim())
       if (categoryId) formData.append('session_category_id', categoryId)
-      if (instructorId) formData.append('instructor_id', instructorId)
+      if (instructorId && instructorId !== 'none') {
+        formData.append('instructor_id', instructorId)
+      } else {
+        formData.append('instructor_id', '')
+      }
       if (duration.trim()) formData.append('duration', duration.trim())
       if (lessons.trim()) formData.append('lessons', lessons.trim())
       if (originalPrice.trim()) formData.append('original_price', originalPrice.trim())
@@ -408,6 +412,7 @@ export function RecordedSessionForm({
                       <SelectValue placeholder='Select Instructor' />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value='none'>None (No Instructor)</SelectItem>
                       {instructors.map((inst) => (
                         <SelectItem key={inst.id} value={String(inst.id)}>
                           {inst.name} {inst.designation ? `(${inst.designation})` : ''}
@@ -727,7 +732,7 @@ export function RecordedSessionForm({
           </Card>
 
           {/* Card 4: Instructor Quick Preview */}
-          {instructorId && (
+          {instructorId && instructorId !== 'none' && (
             <Card>
               <CardHeader className='pb-2'>
                 <CardTitle className='text-xs uppercase text-muted-foreground font-semibold'>

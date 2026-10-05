@@ -230,7 +230,7 @@ export function Sessions() {
               </Badge>
             )}
             <Button
-              onClick={() => navigate({ to: '/sessions/create' })}
+              onClick={() => navigate({ to: '/live-sessions/create' })}
               className='gap-2'
             >
               <Plus className='h-4 w-4' />
@@ -330,7 +330,7 @@ export function Sessions() {
                 : 'Create your first live or upcoming session to display on the platform.'}
             </p>
             <Button
-              onClick={() => navigate({ to: '/sessions/create' })}
+              onClick={() => navigate({ to: '/live-sessions/create' })}
               size='sm'
             >
               <Plus className='mr-1.5 h-4 w-4' /> Add Session
@@ -454,7 +454,7 @@ export function Sessions() {
                             className='size-8'
                             onClick={() =>
                               navigate({
-                                to: '/sessions/$sessionId',
+                                to: '/live-sessions/$sessionId',
                                 params: { sessionId: String(item.id) },
                               })
                             }
@@ -468,7 +468,7 @@ export function Sessions() {
                             className='size-8'
                             onClick={() =>
                               navigate({
-                                to: '/sessions/create',
+                                to: '/live-sessions/create',
                                 search: { id: item.id } as any,
                               })
                             }

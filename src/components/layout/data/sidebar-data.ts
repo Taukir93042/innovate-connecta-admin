@@ -80,7 +80,7 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Live Sessions',
-          url: '/sessions',
+          url: '/live-sessions',
           icon: Presentation,
         },
         {

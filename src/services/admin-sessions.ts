@@ -47,6 +47,7 @@ export interface SessionItem {
   image_url?: string | null
   short_description?: string
   images?: SessionImageItem[]
+  resource?: { id: number; title: string; file_name: string; file_size?: string; file_url?: string; is_active: boolean } | null
   created_at?: string
   updated_at?: string
 }

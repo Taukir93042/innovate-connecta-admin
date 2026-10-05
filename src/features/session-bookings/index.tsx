@@ -414,7 +414,7 @@ export function SessionBookings() {
                           </span>
                           {item.session?.slug && (
                             <span className='text-[11px] text-muted-foreground truncate'>
-                              /sessions/{item.session.slug}
+                              /live-sessions/{item.session.slug}
                             </span>
                           )}
                         </div>

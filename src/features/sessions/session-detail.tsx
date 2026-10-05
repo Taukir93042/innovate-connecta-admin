@@ -3,7 +3,6 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Edit2,
-  Sparkles,
   Layers,
   Image as ImageIcon,
   Loader2,
@@ -48,7 +47,7 @@ export function SessionDetail() {
 
   useEffect(() => {
     if (!sessionId) {
-      navigate({ to: '/sessions' })
+      navigate({ to: '/live-sessions' })
       return
     }
 
@@ -59,7 +58,7 @@ export function SessionDetail() {
         setSession(res.data)
       } catch (err) {
         toast.error(getApiErrorMessage(err))
-        navigate({ to: '/sessions' })
+        navigate({ to: '/live-sessions' })
       } finally {
         setIsLoading(false)
       }
@@ -79,24 +78,13 @@ export function SessionDetail() {
     }
   }
 
-  const handleToggleFeatured = async () => {
-    if (!session) return
-    try {
-      await adminSessionService.toggleFeatured(session.id)
-      setSession((prev) => (prev ? { ...prev, is_featured: !prev.is_featured } : null))
-      toast.success('Featured status updated successfully')
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-    }
-  }
-
   const handleDelete = async () => {
     if (!session) return
     try {
       setIsDeleting(true)
       await adminSessionService.deleteSession(session.id)
       toast.success('Session deleted successfully')
-      navigate({ to: '/sessions' })
+      navigate({ to: '/live-sessions' })
     } catch (err) {
       toast.error(getApiErrorMessage(err))
     } finally {
@@ -139,7 +127,7 @@ export function SessionDetail() {
                 variant='ghost'
                 size='icon'
                 className='h-8 w-8'
-                onClick={() => navigate({ to: '/sessions' })}
+                onClick={() => navigate({ to: '/live-sessions' })}
               >
                 <ArrowLeft className='h-4 w-4' />
               </Button>
@@ -147,11 +135,7 @@ export function SessionDetail() {
             </div>
             <div className='flex items-center gap-2 ml-10'>
               <Badge variant='outline'>{categoryName}</Badge>
-              {session.is_featured && (
-                <Badge variant='secondary' className='gap-1'>
-                  <Sparkles className='h-3 w-3 text-amber-500' /> Featured
-                </Badge>
-              )}
+              
               {session.is_active ? (
                 <Badge variant='default' className='bg-green-600 hover:bg-green-700'>
                   Active
@@ -166,7 +150,7 @@ export function SessionDetail() {
             <Button
               variant='outline'
               size='sm'
-              onClick={() => navigate({ to: '/sessions/create', search: { id: session.id } as any })}
+              onClick={() => navigate({ to: '/live-sessions/create', search: { id: session.id } as any })}
               className='gap-1.5'
             >
               <Edit2 className='h-4 w-4' /> Edit
@@ -367,19 +351,6 @@ export function SessionDetail() {
                   <Switch
                     checked={session.is_active}
                     onCheckedChange={handleToggleStatus}
-                  />
-                </div>
-
-                <div className='flex items-center justify-between rounded-lg border p-3'>
-                  <div>
-                    <div className='text-sm font-medium'>Featured on Home</div>
-                    <div className='text-xs text-muted-foreground'>
-                      Highlight on landing page
-                    </div>
-                  </div>
-                  <Switch
-                    checked={session.is_featured}
-                    onCheckedChange={handleToggleFeatured}
                   />
                 </div>
 

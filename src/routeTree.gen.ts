@@ -29,6 +29,9 @@ import { Route as AuthenticatedGalleriesIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedGalleryCategoriesIndexRouteImport } from './routes/_authenticated/gallery-categories/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedInstructorsIndexRouteImport } from './routes/_authenticated/instructors/index'
+import { Route as AuthenticatedLiveSessionsIndexRouteImport } from './routes/_authenticated/live-sessions/index'
+import { Route as AuthenticatedLiveSessionsSessionIdRouteImport } from './routes/_authenticated/live-sessions/$sessionId'
+import { Route as AuthenticatedLiveSessionsCreateRouteImport } from './routes/_authenticated/live-sessions/create'
 import { Route as AuthenticatedRecordedOrdersIndexRouteImport } from './routes/_authenticated/recorded-orders/index'
 import { Route as AuthenticatedRecordedOrdersOrderIdRouteImport } from './routes/_authenticated/recorded-orders/$orderId'
 import { Route as AuthenticatedRecordedSessionsIndexRouteImport } from './routes/_authenticated/recorded-sessions/index'
@@ -37,9 +40,6 @@ import { Route as AuthenticatedRecordedSessionsCreateRouteImport } from './route
 import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authenticated/resources/index'
 import { Route as AuthenticatedSessionBookingsIndexRouteImport } from './routes/_authenticated/session-bookings/index'
 import { Route as AuthenticatedSessionCategoriesIndexRouteImport } from './routes/_authenticated/session-categories/index'
-import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
-import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
-import { Route as AuthenticatedSessionsCreateRouteImport } from './routes/_authenticated/sessions/create'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
@@ -153,6 +153,24 @@ const AuthenticatedInstructorsIndexRoute =
     path: '/instructors/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLiveSessionsIndexRoute =
+  AuthenticatedLiveSessionsIndexRouteImport.update({
+    id: '/live-sessions/',
+    path: '/live-sessions/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLiveSessionsSessionIdRoute =
+  AuthenticatedLiveSessionsSessionIdRouteImport.update({
+    id: '/live-sessions/$sessionId',
+    path: '/live-sessions/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLiveSessionsCreateRoute =
+  AuthenticatedLiveSessionsCreateRouteImport.update({
+    id: '/live-sessions/create',
+    path: '/live-sessions/create',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRecordedOrdersIndexRoute =
   AuthenticatedRecordedOrdersIndexRouteImport.update({
     id: '/recorded-orders/',
@@ -199,24 +217,6 @@ const AuthenticatedSessionCategoriesIndexRoute =
   AuthenticatedSessionCategoriesIndexRouteImport.update({
     id: '/session-categories/',
     path: '/session-categories/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSessionsIndexRoute =
-  AuthenticatedSessionsIndexRouteImport.update({
-    id: '/sessions/',
-    path: '/sessions/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSessionsSessionIdRoute =
-  AuthenticatedSessionsSessionIdRouteImport.update({
-    id: '/sessions/$sessionId',
-    path: '/sessions/$sessionId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSessionsCreateRoute =
-  AuthenticatedSessionsCreateRouteImport.update({
-    id: '/sessions/create',
-    path: '/sessions/create',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsIndexRoute =
@@ -269,11 +269,11 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/live-sessions/$sessionId': typeof AuthenticatedLiveSessionsSessionIdRoute
+  '/live-sessions/create': typeof AuthenticatedLiveSessionsCreateRoute
   '/recorded-orders/$orderId': typeof AuthenticatedRecordedOrdersOrderIdRoute
   '/recorded-sessions/$recordedSessionId': typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
   '/recorded-sessions/create': typeof AuthenticatedRecordedSessionsCreateRoute
-  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
-  '/sessions/create': typeof AuthenticatedSessionsCreateRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -283,12 +283,12 @@ export interface FileRoutesByFullPath {
   '/gallery-categories/': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/instructors/': typeof AuthenticatedInstructorsIndexRoute
+  '/live-sessions/': typeof AuthenticatedLiveSessionsIndexRoute
   '/recorded-orders/': typeof AuthenticatedRecordedOrdersIndexRoute
   '/recorded-sessions/': typeof AuthenticatedRecordedSessionsIndexRoute
   '/resources/': typeof AuthenticatedResourcesIndexRoute
   '/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
-  '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/testimonials/': typeof AuthenticatedTestimonialsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
@@ -306,11 +306,11 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/live-sessions/$sessionId': typeof AuthenticatedLiveSessionsSessionIdRoute
+  '/live-sessions/create': typeof AuthenticatedLiveSessionsCreateRoute
   '/recorded-orders/$orderId': typeof AuthenticatedRecordedOrdersOrderIdRoute
   '/recorded-sessions/$recordedSessionId': typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
   '/recorded-sessions/create': typeof AuthenticatedRecordedSessionsCreateRoute
-  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
-  '/sessions/create': typeof AuthenticatedSessionsCreateRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -320,12 +320,12 @@ export interface FileRoutesByTo {
   '/gallery-categories': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/instructors': typeof AuthenticatedInstructorsIndexRoute
+  '/live-sessions': typeof AuthenticatedLiveSessionsIndexRoute
   '/recorded-orders': typeof AuthenticatedRecordedOrdersIndexRoute
   '/recorded-sessions': typeof AuthenticatedRecordedSessionsIndexRoute
   '/resources': typeof AuthenticatedResourcesIndexRoute
   '/session-bookings': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories': typeof AuthenticatedSessionCategoriesIndexRoute
-  '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/testimonials': typeof AuthenticatedTestimonialsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -346,11 +346,11 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/live-sessions/$sessionId': typeof AuthenticatedLiveSessionsSessionIdRoute
+  '/_authenticated/live-sessions/create': typeof AuthenticatedLiveSessionsCreateRoute
   '/_authenticated/recorded-orders/$orderId': typeof AuthenticatedRecordedOrdersOrderIdRoute
   '/_authenticated/recorded-sessions/$recordedSessionId': typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
   '/_authenticated/recorded-sessions/create': typeof AuthenticatedRecordedSessionsCreateRoute
-  '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
-  '/_authenticated/sessions/create': typeof AuthenticatedSessionsCreateRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -360,12 +360,12 @@ export interface FileRoutesById {
   '/_authenticated/gallery-categories/': typeof AuthenticatedGalleryCategoriesIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/instructors/': typeof AuthenticatedInstructorsIndexRoute
+  '/_authenticated/live-sessions/': typeof AuthenticatedLiveSessionsIndexRoute
   '/_authenticated/recorded-orders/': typeof AuthenticatedRecordedOrdersIndexRoute
   '/_authenticated/recorded-sessions/': typeof AuthenticatedRecordedSessionsIndexRoute
   '/_authenticated/resources/': typeof AuthenticatedResourcesIndexRoute
   '/_authenticated/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/_authenticated/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
-  '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/testimonials/': typeof AuthenticatedTestimonialsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -386,11 +386,11 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/live-sessions/$sessionId'
+    | '/live-sessions/create'
     | '/recorded-orders/$orderId'
     | '/recorded-sessions/$recordedSessionId'
     | '/recorded-sessions/create'
-    | '/sessions/$sessionId'
-    | '/sessions/create'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -400,12 +400,12 @@ export interface FileRouteTypes {
     | '/gallery-categories/'
     | '/help-center/'
     | '/instructors/'
+    | '/live-sessions/'
     | '/recorded-orders/'
     | '/recorded-sessions/'
     | '/resources/'
     | '/session-bookings/'
     | '/session-categories/'
-    | '/sessions/'
     | '/settings/'
     | '/testimonials/'
     | '/users/'
@@ -423,11 +423,11 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/live-sessions/$sessionId'
+    | '/live-sessions/create'
     | '/recorded-orders/$orderId'
     | '/recorded-sessions/$recordedSessionId'
     | '/recorded-sessions/create'
-    | '/sessions/$sessionId'
-    | '/sessions/create'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -437,12 +437,12 @@ export interface FileRouteTypes {
     | '/gallery-categories'
     | '/help-center'
     | '/instructors'
+    | '/live-sessions'
     | '/recorded-orders'
     | '/recorded-sessions'
     | '/resources'
     | '/session-bookings'
     | '/session-categories'
-    | '/sessions'
     | '/settings'
     | '/testimonials'
     | '/users'
@@ -462,11 +462,11 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/live-sessions/$sessionId'
+    | '/_authenticated/live-sessions/create'
     | '/_authenticated/recorded-orders/$orderId'
     | '/_authenticated/recorded-sessions/$recordedSessionId'
     | '/_authenticated/recorded-sessions/create'
-    | '/_authenticated/sessions/$sessionId'
-    | '/_authenticated/sessions/create'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -476,12 +476,12 @@ export interface FileRouteTypes {
     | '/_authenticated/gallery-categories/'
     | '/_authenticated/help-center/'
     | '/_authenticated/instructors/'
+    | '/_authenticated/live-sessions/'
     | '/_authenticated/recorded-orders/'
     | '/_authenticated/recorded-sessions/'
     | '/_authenticated/resources/'
     | '/_authenticated/session-bookings/'
     | '/_authenticated/session-categories/'
-    | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
     | '/_authenticated/testimonials/'
     | '/_authenticated/users/'
@@ -644,6 +644,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInstructorsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/live-sessions/': {
+      id: '/_authenticated/live-sessions/'
+      path: '/live-sessions'
+      fullPath: '/live-sessions/'
+      preLoaderRoute: typeof AuthenticatedLiveSessionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/live-sessions/$sessionId': {
+      id: '/_authenticated/live-sessions/$sessionId'
+      path: '/live-sessions/$sessionId'
+      fullPath: '/live-sessions/$sessionId'
+      preLoaderRoute: typeof AuthenticatedLiveSessionsSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/live-sessions/create': {
+      id: '/_authenticated/live-sessions/create'
+      path: '/live-sessions/create'
+      fullPath: '/live-sessions/create'
+      preLoaderRoute: typeof AuthenticatedLiveSessionsCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/recorded-orders/': {
       id: '/_authenticated/recorded-orders/'
       path: '/recorded-orders'
@@ -698,27 +719,6 @@ declare module '@tanstack/react-router' {
       path: '/session-categories'
       fullPath: '/session-categories/'
       preLoaderRoute: typeof AuthenticatedSessionCategoriesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/sessions/': {
-      id: '/_authenticated/sessions/'
-      path: '/sessions'
-      fullPath: '/sessions/'
-      preLoaderRoute: typeof AuthenticatedSessionsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/sessions/$sessionId': {
-      id: '/_authenticated/sessions/$sessionId'
-      path: '/sessions/$sessionId'
-      fullPath: '/sessions/$sessionId'
-      preLoaderRoute: typeof AuthenticatedSessionsSessionIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/sessions/create': {
-      id: '/_authenticated/sessions/create'
-      path: '/sessions/create'
-      fullPath: '/sessions/create'
-      preLoaderRoute: typeof AuthenticatedSessionsCreateRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/': {
@@ -789,23 +789,23 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedLiveSessionsSessionIdRoute: typeof AuthenticatedLiveSessionsSessionIdRoute
+  AuthenticatedLiveSessionsCreateRoute: typeof AuthenticatedLiveSessionsCreateRoute
   AuthenticatedRecordedOrdersOrderIdRoute: typeof AuthenticatedRecordedOrdersOrderIdRoute
   AuthenticatedRecordedSessionsRecordedSessionIdRoute: typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
   AuthenticatedRecordedSessionsCreateRoute: typeof AuthenticatedRecordedSessionsCreateRoute
-  AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
-  AuthenticatedSessionsCreateRoute: typeof AuthenticatedSessionsCreateRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
   AuthenticatedFeedbacksIndexRoute: typeof AuthenticatedFeedbacksIndexRoute
   AuthenticatedGalleriesIndexRoute: typeof AuthenticatedGalleriesIndexRoute
   AuthenticatedGalleryCategoriesIndexRoute: typeof AuthenticatedGalleryCategoriesIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedInstructorsIndexRoute: typeof AuthenticatedInstructorsIndexRoute
+  AuthenticatedLiveSessionsIndexRoute: typeof AuthenticatedLiveSessionsIndexRoute
   AuthenticatedRecordedOrdersIndexRoute: typeof AuthenticatedRecordedOrdersIndexRoute
   AuthenticatedRecordedSessionsIndexRoute: typeof AuthenticatedRecordedSessionsIndexRoute
   AuthenticatedResourcesIndexRoute: typeof AuthenticatedResourcesIndexRoute
   AuthenticatedSessionBookingsIndexRoute: typeof AuthenticatedSessionBookingsIndexRoute
   AuthenticatedSessionCategoriesIndexRoute: typeof AuthenticatedSessionCategoriesIndexRoute
-  AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
   AuthenticatedTestimonialsIndexRoute: typeof AuthenticatedTestimonialsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
 }
@@ -813,14 +813,15 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedLiveSessionsSessionIdRoute:
+    AuthenticatedLiveSessionsSessionIdRoute,
+  AuthenticatedLiveSessionsCreateRoute: AuthenticatedLiveSessionsCreateRoute,
   AuthenticatedRecordedOrdersOrderIdRoute:
     AuthenticatedRecordedOrdersOrderIdRoute,
   AuthenticatedRecordedSessionsRecordedSessionIdRoute:
     AuthenticatedRecordedSessionsRecordedSessionIdRoute,
   AuthenticatedRecordedSessionsCreateRoute:
     AuthenticatedRecordedSessionsCreateRoute,
-  AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
-  AuthenticatedSessionsCreateRoute: AuthenticatedSessionsCreateRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
   AuthenticatedFeedbacksIndexRoute: AuthenticatedFeedbacksIndexRoute,
   AuthenticatedGalleriesIndexRoute: AuthenticatedGalleriesIndexRoute,
@@ -828,6 +829,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedGalleryCategoriesIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedInstructorsIndexRoute: AuthenticatedInstructorsIndexRoute,
+  AuthenticatedLiveSessionsIndexRoute: AuthenticatedLiveSessionsIndexRoute,
   AuthenticatedRecordedOrdersIndexRoute: AuthenticatedRecordedOrdersIndexRoute,
   AuthenticatedRecordedSessionsIndexRoute:
     AuthenticatedRecordedSessionsIndexRoute,
@@ -836,7 +838,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSessionBookingsIndexRoute,
   AuthenticatedSessionCategoriesIndexRoute:
     AuthenticatedSessionCategoriesIndexRoute,
-  AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
   AuthenticatedTestimonialsIndexRoute: AuthenticatedTestimonialsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
 }
