@@ -8,11 +8,8 @@ import {
   Eye,
   FolderOpen,
   FileText,
-  FileCode,
-  FileSpreadsheet,
   Download,
-  Video,
-  File,
+  AlertCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -32,7 +29,6 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -61,15 +57,7 @@ import {
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PaginationBar } from '@/components/pagination-bar'
 
-const CATEGORY_OPTIONS = [
-  'Study Notes',
-  'PDF Guide',
-  'E-Book',
-  'Resource Pack',
-  'Presentation Slides',
-  'Cheat Sheet',
-  'Source Code',
-]
+const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024 // 20 MB
 
 export function Resources() {
   return <ResourcesFeature />
@@ -80,7 +68,6 @@ export function ResourcesFeature() {
   const [recordedSessions, setRecordedSessions] = useState<RecordedSessionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedSessionId, setSelectedSessionId] = useState<string>('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -100,10 +87,8 @@ export function ResourcesFeature() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Form inputs state
-  const [formTitle, setFormTitle] = useState('')
   const [formRecordedSessionId, setFormRecordedSessionId] = useState<string>('')
-  const [formCategory, setFormCategory] = useState('Study Notes')
-  const [formDescription, setFormDescription] = useState('')
+  const [formTitle, setFormTitle] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
   const [resourceFile, setResourceFile] = useState<File | null>(null)
 
@@ -121,7 +106,6 @@ export function ResourcesFeature() {
   const fetchResources = async (
     currentPage = page,
     searchQuery = search,
-    cat = selectedCategory,
     recSessionId = selectedSessionId
   ) => {
     try {
@@ -130,7 +114,6 @@ export function ResourcesFeature() {
         page: currentPage,
         per_page: 10,
         search: searchQuery.trim() || undefined,
-        category: cat !== 'all' ? cat : undefined,
         recorded_session_id: recSessionId !== 'all' ? recSessionId : undefined,
       })
 
@@ -155,22 +138,20 @@ export function ResourcesFeature() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1)
-      fetchResources(1, search, selectedCategory, selectedSessionId)
+      fetchResources(1, search, selectedSessionId)
     }, 300)
     return () => clearTimeout(timer)
-  }, [search, selectedCategory, selectedSessionId])
+  }, [search, selectedSessionId])
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
-    fetchResources(newPage, search, selectedCategory, selectedSessionId)
+    fetchResources(newPage, search, selectedSessionId)
   }
 
   const handleOpenCreateModal = () => {
     setEditingItem(null)
-    setFormTitle('')
     setFormRecordedSessionId('')
-    setFormCategory('Study Notes')
-    setFormDescription('')
+    setFormTitle('')
     setFormIsActive(true)
     setResourceFile(null)
     setIsFormOpen(true)
@@ -178,13 +159,57 @@ export function ResourcesFeature() {
 
   const handleOpenEditModal = (item: ResourceItem) => {
     setEditingItem(item)
-    setFormTitle(item.title)
     setFormRecordedSessionId(item.recorded_session_id ? String(item.recorded_session_id) : '')
-    setFormCategory(item.category || 'Study Notes')
-    setFormDescription(item.description || '')
+    setFormTitle(item.title)
     setFormIsActive(item.is_active)
     setResourceFile(null)
     setIsFormOpen(true)
+  }
+
+  // When session is selected, auto-fill title with hyphen
+  const handleSessionSelect = (sessionId: string) => {
+    setFormRecordedSessionId(sessionId)
+    if (sessionId) {
+      const selectedSession = recordedSessions.find((s) => String(s.id) === sessionId)
+      if (selectedSession && (!formTitle || formTitle.trim() === '')) {
+        setFormTitle(`${selectedSession.title} - Session PDF Notes`)
+      }
+    }
+  }
+
+  // Find if currently selected session already has a resource attached
+  const existingResourceForSession = formRecordedSessionId
+    ? resources.find(
+        (r) =>
+          String(r.recorded_session_id) === formRecordedSessionId &&
+          (!editingItem || editingItem.id !== r.id)
+      )
+    : null
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+
+      // Check if file is PDF
+      const isPdf =
+        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      if (!isPdf) {
+        toast.error('Only PDF files (.pdf) are allowed.')
+        e.target.value = ''
+        setResourceFile(null)
+        return
+      }
+
+      // Check max 20 MB size limit
+      if (file.size > MAX_PDF_SIZE_BYTES) {
+        toast.error('PDF file size exceeds 20 MB limit. Please select a smaller PDF.')
+        e.target.value = ''
+        setResourceFile(null)
+        return
+      }
+
+      setResourceFile(file)
+    }
   }
 
   const handleToggleStatus = async (item: ResourceItem) => {
@@ -203,27 +228,32 @@ export function ResourcesFeature() {
 
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!formRecordedSessionId) {
+      toast.error('Please select a Recorded Session / Masterclass')
+      return
+    }
+
     if (!formTitle.trim()) {
       toast.error('Resource title is required')
       return
     }
 
     if (!editingItem && !resourceFile) {
-      toast.error('Please select a file to upload')
+      toast.error('Please select a PDF file to upload')
+      return
+    }
+
+    if (resourceFile && resourceFile.size > MAX_PDF_SIZE_BYTES) {
+      toast.error('PDF file size must not exceed 20 MB.')
       return
     }
 
     try {
       setIsSubmitting(true)
       const formData = new FormData()
+      formData.append('recorded_session_id', formRecordedSessionId)
       formData.append('title', formTitle.trim())
-      if (formRecordedSessionId) {
-        formData.append('recorded_session_id', formRecordedSessionId)
-      }
-      formData.append('category', formCategory)
-      if (formDescription.trim()) {
-        formData.append('description', formDescription.trim())
-      }
+      formData.append('category', 'PDF Notes')
       formData.append('is_active', formIsActive ? '1' : '0')
 
       if (resourceFile) {
@@ -231,57 +261,58 @@ export function ResourcesFeature() {
       }
 
       if (editingItem) {
+        formData.append('_method', 'PUT')
         const res = await adminResourceService.updateResource(editingItem.id, formData)
         if (res.status) {
-          toast.success('Resource updated successfully')
+          toast.success(res.message || 'Session PDF updated successfully')
           setIsFormOpen(false)
-          fetchResources(page, search, selectedCategory, selectedSessionId)
+          fetchResources()
         }
       } else {
         const res = await adminResourceService.createResource(formData)
         if (res.status) {
-          toast.success('Resource created and uploaded successfully')
+          toast.success(res.message || 'Session PDF uploaded successfully')
           setIsFormOpen(false)
-          fetchResources(1, search, selectedCategory, selectedSessionId)
+          fetchResources()
         }
       }
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to save resource'))
+      toast.error(getApiErrorMessage(err, 'Failed to save PDF'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleDeleteConfirm = async () => {
+  const handleDelete = async () => {
     if (!deleteItem) return
     try {
       setIsDeleting(true)
       const res = await adminResourceService.deleteResource(deleteItem.id)
       if (res.status) {
-        toast.success(res.message || 'Resource deleted successfully')
+        toast.success('PDF deleted successfully')
         setDeleteItem(null)
-        fetchResources(page, search, selectedCategory, selectedSessionId)
+        fetchResources()
       }
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to delete resource'))
+      toast.error(getApiErrorMessage(err, 'Failed to delete PDF'))
     } finally {
       setIsDeleting(false)
     }
   }
 
-  const handleBulkDeleteConfirm = async () => {
-    if (!selectedIds.length) return
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return
     try {
       setIsBulkDeleting(true)
       const res = await adminResourceService.bulkDeleteResources(selectedIds)
       if (res.status) {
-        toast.success(res.message || 'Selected resources deleted successfully')
+        toast.success(res.message || 'Selected PDFs deleted')
         setSelectedIds([])
         setIsBulkDeletingOpen(false)
-        fetchResources(1, search, selectedCategory, selectedSessionId)
+        fetchResources()
       }
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to delete selected resources'))
+      toast.error(getApiErrorMessage(err, 'Failed to bulk delete'))
     } finally {
       setIsBulkDeleting(false)
     }
@@ -295,20 +326,12 @@ export function ResourcesFeature() {
     }
   }
 
-  const handleSelectRow = (id: number) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    )
-  }
-
-  const getFileIcon = (ext?: string | null) => {
-    const e = (ext || '').toLowerCase()
-    if (e === 'pdf') return <FileText className='h-4 w-4 text-rose-500' />
-    if (['zip', 'rar', '7z'].includes(e)) return <FolderOpen className='h-4 w-4 text-amber-500' />
-    if (['doc', 'docx'].includes(e)) return <FileText className='h-4 w-4 text-blue-500' />
-    if (['xls', 'xlsx', 'csv'].includes(e)) return <FileSpreadsheet className='h-4 w-4 text-emerald-500' />
-    if (['js', 'ts', 'py', 'json', 'html', 'css'].includes(e)) return <FileCode className='h-4 w-4 text-cyan-500' />
-    return <File className='h-4 w-4 text-muted-foreground' />
+  const handleSelectOne = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, id])
+    } else {
+      setSelectedIds((prev) => prev.filter((i) => i !== id))
+    }
   }
 
   return (
@@ -326,10 +349,10 @@ export function ResourcesFeature() {
         <div className='flex flex-wrap items-center justify-between gap-4'>
           <div>
             <h1 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
-              <FolderOpen className='h-6 w-6 text-primary' /> Resources Library Management
+              <FolderOpen className='h-6 w-6 text-primary' /> Session PDF Management
             </h1>
             <p className='text-sm text-muted-foreground'>
-              Upload and manage course notes, cheat sheets, guides, and downloadable files linked to masterclasses.
+              Upload 1 PDF notes file (max 20 MB) per recorded session. Only enrolled students can view &amp; download it.
             </p>
           </div>
 
@@ -348,7 +371,7 @@ export function ResourcesFeature() {
 
             <Button onClick={handleOpenCreateModal} className='gap-2 shadow-sm'>
               <Plus className='h-4 w-4' />
-              Upload Resource
+              Upload Session PDF
             </Button>
           </div>
         </div>
@@ -358,36 +381,20 @@ export function ResourcesFeature() {
           <div className='relative flex-1 min-w-[240px]'>
             <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
             <Input
-              placeholder='Search by title, file name, course...'
+              placeholder='Search by title, file name, session...'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className='pl-9'
             />
           </div>
 
-          <div className='w-[190px]'>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder='Filter Category' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>All Categories</SelectItem>
-                {CATEGORY_OPTIONS.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className='w-[220px]'>
+          <div className='w-[280px]'>
             <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
               <SelectTrigger>
-                <SelectValue placeholder='Filter Masterclass' />
+                <SelectValue placeholder='Filter By Session' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>All Masterclasses</SelectItem>
+                <SelectItem value='all'>All Recorded Sessions</SelectItem>
                 {recordedSessions.map((s) => (
                   <SelectItem key={s.id} value={String(s.id)}>
                     {s.title}
@@ -402,7 +409,6 @@ export function ResourcesFeature() {
             size='sm'
             onClick={() => {
               setSearch('')
-              setSelectedCategory('all')
               setSelectedSessionId('all')
             }}
             className='text-xs'
@@ -426,11 +432,8 @@ export function ResourcesFeature() {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                   />
                 </TableHead>
-                <TableHead className='min-w-[240px]'>Resource Title & File</TableHead>
-                <TableHead>Linked Masterclass</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Type & Size</TableHead>
-                <TableHead className='text-center'>Downloads</TableHead>
+                <TableHead className='min-w-[260px]'>Resource Title &amp; PDF File</TableHead>
+                <TableHead>Size</TableHead>
                 <TableHead className='text-center'>Status</TableHead>
                 <TableHead className='text-right'>Actions</TableHead>
               </TableRow>
@@ -438,85 +441,64 @@ export function ResourcesFeature() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-36 text-center'>
+                  <TableCell colSpan={5} className='h-36 text-center'>
                     <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
                       <Loader2 className='h-6 w-6 animate-spin text-primary' />
-                      <span>Loading resources...</span>
+                      <span>Loading PDF resources...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : resources.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-36 text-center text-muted-foreground'>
-                    No resources found. Click &quot;Upload Resource&quot; to add course files.
+                  <TableCell colSpan={5} className='h-40 text-center'>
+                    <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
+                      <FolderOpen className='h-8 w-8 text-muted-foreground/50' />
+                      <p className='font-medium text-foreground'>No session PDFs found</p>
+                      <p className='text-xs text-muted-foreground'>
+                        Upload your first session PDF notes to make it available for enrolled students.
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 resources.map((res) => {
-                  const sessionTitle = res.recorded_session?.title || res.session?.title || 'General / Unlinked'
+                  const isSelected = selectedIds.includes(res.id)
 
                   return (
-                    <TableRow key={res.id} className='hover:bg-muted/30 transition'>
+                    <TableRow
+                      key={res.id}
+                      className={isSelected ? 'bg-primary/5 hover:bg-primary/10' : undefined}
+                    >
+                      {/* Checkbox */}
                       <TableCell>
                         <input
                           type='checkbox'
                           className='rounded border-gray-300'
-                          checked={selectedIds.includes(res.id)}
-                          onChange={() => handleSelectRow(res.id)}
+                          checked={isSelected}
+                          onChange={(e) => handleSelectOne(res.id, e.target.checked)}
                         />
                       </TableCell>
 
-                      {/* Title & File Name */}
+                      {/* Title & PDF File Name */}
                       <TableCell>
-                        <div className='flex items-start gap-2.5'>
-                          <div className='mt-1 p-2 rounded-lg bg-muted flex items-center justify-center border'>
-                            {getFileIcon(res.file_type)}
+                        <div className='flex items-start gap-3'>
+                          <div className='p-2 rounded-lg bg-red-500/10 text-red-500 mt-0.5'>
+                            <FileText className='h-5 w-5' />
                           </div>
                           <div>
-                            <div className='font-semibold text-sm leading-tight text-foreground'>
+                            <p className='font-semibold text-foreground text-sm line-clamp-1'>
                               {res.title}
-                            </div>
-                            <div className='text-xs text-muted-foreground font-mono mt-0.5'>
-                              {res.file_name}
-                            </div>
-                            {res.description && (
-                              <p className='text-xs text-muted-foreground line-clamp-1 mt-0.5'>
-                                {res.description}
-                              </p>
-                            )}
+                            </p>
+                            
                           </div>
                         </div>
                       </TableCell>
 
-                      {/* Linked Masterclass */}
+                      {/* File Size */}
                       <TableCell>
-                        <Badge variant='outline' className='text-[11px] font-normal gap-1 max-w-[200px] truncate'>
-                          <Video className='h-3 w-3 text-primary shrink-0' />
-                          <span className='truncate'>{sessionTitle}</span>
+                        <Badge variant='outline' className='text-xs font-mono py-0 text-muted-foreground'>
+                          {res.file_size || 'PDF'}
                         </Badge>
-                      </TableCell>
-
-                      {/* Category */}
-                      <TableCell>
-                        <Badge className='text-[11px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20'>
-                          {res.category}
-                        </Badge>
-                      </TableCell>
-
-                      {/* Type & Size */}
-                      <TableCell>
-                        <div className='text-xs font-mono text-muted-foreground'>
-                          <span className='uppercase font-semibold text-foreground'>{res.file_type || 'file'}</span>
-                          {res.file_size && <span> • {res.file_size}</span>}
-                        </div>
-                      </TableCell>
-
-                      {/* Downloads */}
-                      <TableCell className='text-center'>
-                        <span className='inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground'>
-                          <Download className='h-3 w-3' />
-                          {res.download_count}
-                        </span>
                       </TableCell>
 
                       {/* Status */}
@@ -533,27 +515,41 @@ export function ResourcesFeature() {
                           {res.file_url && (
                             <a
                               href={res.file_url}
+                              download={res.file_name || 'resource.pdf'}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition'
-                              title='Download / Preview File'
+                              className='inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition'
+                              title='Download PDF'
                             >
                               <Download className='h-4 w-4' />
                             </a>
                           )}
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            onClick={() => setViewItem(res)}
-                            title='View Details'
-                          >
-                            <Eye className='h-4 w-4 text-muted-foreground' />
-                          </Button>
+                          {res.file_url ? (
+                            <a
+                              href={res.file_url}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition'
+                              title='View PDF'
+                            >
+                              <Eye className='h-4 w-4' />
+                            </a>
+                          ) : (
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8'
+                              onClick={() => setViewItem(res)}
+                              title='View Details'
+                            >
+                              <Eye className='h-4 w-4 text-muted-foreground' />
+                            </Button>
+                          )}
                           <Button
                             variant='ghost'
                             size='icon'
                             onClick={() => handleOpenEditModal(res)}
-                            title='Edit Resource'
+                            title='Edit PDF'
                           >
                             <Edit2 className='h-4 w-4 text-primary' />
                           </Button>
@@ -562,7 +558,7 @@ export function ResourcesFeature() {
                             size='icon'
                             onClick={() => setDeleteItem(res)}
                             className='text-destructive hover:text-destructive'
-                            title='Delete Resource'
+                            title='Delete PDF'
                           >
                             <Trash2 className='h-4 w-4' />
                           </Button>
@@ -591,107 +587,100 @@ export function ResourcesFeature() {
 
         {/* Create / Edit Resource Modal */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className='sm:max-w-[560px]'>
+          <DialogContent className='sm:max-w-[540px]'>
             <form onSubmit={handleSubmitForm}>
               <DialogHeader>
-                <DialogTitle>{editingItem ? 'Edit Resource' : 'Upload New Resource'}</DialogTitle>
+                <DialogTitle>
+                  {editingItem ? 'Edit Session PDF' : 'Upload Session PDF'}
+                </DialogTitle>
                 <DialogDescription>
-                  {editingItem
-                    ? 'Update resource metadata, assign masterclass, or replace uploaded file.'
-                    : 'Upload a study file, cheat sheet, or guide for enrolled masterclass students.'}
+                  Upload or replace the PDF notes for a recorded session (1 session = 1 PDF, max 20 MB).
                 </DialogDescription>
               </DialogHeader>
 
               <div className='grid gap-4 py-4'>
+                {/* 1. Select Recorded Session (Required) */}
                 <div className='grid gap-2'>
-                  <Label htmlFor='title'>Resource Title *</Label>
+                  <Label htmlFor='session' className='font-semibold'>
+                    Recorded Session / Masterclass <span className='text-destructive'>*</span>
+                  </Label>
+                  <Select
+                    value={formRecordedSessionId}
+                    onValueChange={handleSessionSelect}
+                    required
+                  >
+                    <SelectTrigger id='session'>
+                      <SelectValue placeholder='Select Recorded Session' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {recordedSessions.map((s) => (
+                        <SelectItem key={s.id} value={String(s.id)}>
+                          {s.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {existingResourceForSession && (
+                    <div className='flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500'>
+                      <AlertCircle className='h-4 w-4 flex-shrink-0' />
+                      <span>
+                        This session already has a PDF attached (<strong>{existingResourceForSession.file_name}</strong>). Uploading will replace it.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Resource Title */}
+                <div className='grid gap-2'>
+                  <Label htmlFor='title' className='font-semibold'>
+                    Resource Title <span className='text-destructive'>*</span>
+                  </Label>
                   <Input
                     id='title'
-                    placeholder='e.g. Python Basics & Loops Cheat Sheet'
+                    placeholder='e.g. LinkedIn Growth &amp; Personal Branding Playbook - Session PDF Notes'
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     required
                   />
+                  <p className='text-[11px] text-muted-foreground'>
+                    Auto-formatted with hyphen (-) for clear separation.
+                  </p>
                 </div>
 
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                  <div className='grid gap-2'>
-                    <Label htmlFor='session'>Assigned Masterclass</Label>
-                    <Select value={formRecordedSessionId} onValueChange={setFormRecordedSessionId}>
-                      <SelectTrigger id='session'>
-                        <SelectValue placeholder='Select Course' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value=''>General / No Specific Course</SelectItem>
-                        {recordedSessions.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className='grid gap-2'>
-                    <Label htmlFor='category'>Category *</Label>
-                    <Select value={formCategory} onValueChange={setFormCategory}>
-                      <SelectTrigger id='category'>
-                        <SelectValue placeholder='Select Category' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_OPTIONS.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
+                {/* 3. File Upload (PDF only, Max 20MB) */}
                 <div className='grid gap-2'>
-                  <Label htmlFor='file'>
-                    {editingItem ? 'Replace File (Optional)' : 'Select File (PDF, DOCX, ZIP, PPTX, etc.) *'}
-                  </Label>
+                  <div className='flex items-center justify-between'>
+                    <Label htmlFor='file' className='font-semibold'>
+                      PDF File {editingItem ? '(Leave blank to keep current)' : <span className='text-destructive'>*</span>}
+                    </Label>
+                    <span className='text-xs text-muted-foreground font-medium'>
+                      PDF only, Max 20 MB
+                    </span>
+                  </div>
                   <Input
                     id='file'
                     type='file'
-                    onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
+                    accept='.pdf,application/pdf'
+                    onChange={handleFileChange}
                     required={!editingItem}
-                    className='cursor-pointer file:cursor-pointer'
                   />
-                  {editingItem && !resourceFile && (
-                    <span className='text-xs text-muted-foreground'>
-                      Current file: <span className='font-mono font-medium'>{editingItem.file_name}</span> ({editingItem.file_size})
-                    </span>
-                  )}
-                  {resourceFile && (
-                    <span className='text-xs text-primary font-medium'>
-                      Selected: {resourceFile.name} ({(resourceFile.size / 1024 / 1024).toFixed(2)} MB)
-                    </span>
+                  {editingItem && editingItem.file_name && !resourceFile && (
+                    <p className='text-xs text-muted-foreground font-mono'>
+                      Current PDF: {editingItem.file_name} ({editingItem.file_size})
+                    </p>
                   )}
                 </div>
 
-                <div className='grid gap-2'>
-                  <Label htmlFor='description'>Description (Optional)</Label>
-                  <Textarea
-                    id='description'
-                    placeholder='Brief overview of what this resource contains...'
-                    value={formDescription}
-                    onChange={(e) => setFormDescription(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/30'>
+                {/* 4. Active Switch */}
+                <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/20'>
                   <div>
-                    <Label htmlFor='is_active' className='font-medium'>Active / Published</Label>
-                    <p className='text-xs text-muted-foreground'>
-                      Visible and downloadable by enrolled students
+                    <Label className='text-xs font-semibold'>Visible to Enrolled Students</Label>
+                    <p className='text-[11px] text-muted-foreground'>
+                      {formIsActive ? 'Active & Downloadable' : 'Hidden'}
                     </p>
                   </div>
                   <Switch
-                    id='is_active'
                     checked={formIsActive}
                     onCheckedChange={setFormIsActive}
                   />
@@ -709,108 +698,82 @@ export function ResourcesFeature() {
                 </Button>
                 <Button type='submit' disabled={isSubmitting} className='gap-2'>
                   {isSubmitting && <Loader2 className='h-4 w-4 animate-spin' />}
-                  {editingItem ? 'Save Changes' : 'Upload Resource'}
+                  {editingItem ? 'Update PDF' : 'Upload PDF'}
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
 
-        {/* View Details Dialog */}
-        <Dialog open={viewItem !== null} onOpenChange={(open) => !open && setViewItem(null)}>
-          <DialogContent className='sm:max-w-[480px]'>
-            {viewItem && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className='flex items-center gap-2'>
-                    {getFileIcon(viewItem.file_type)} {viewItem.title}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Resource details and download link
-                  </DialogDescription>
-                </DialogHeader>
+        {/* View Resource Details Modal */}
+        <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
+          <DialogContent className='sm:max-w-[460px]'>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <FileText className='h-5 w-5 text-red-500' />
+                <span>PDF Resource Details</span>
+              </DialogTitle>
+            </DialogHeader>
 
-                <div className='space-y-3 py-2 text-sm'>
-                  <div className='flex justify-between py-1 border-b'>
-                    <span className='text-muted-foreground'>File Name:</span>
-                    <span className='font-mono font-medium'>{viewItem.file_name}</span>
-                  </div>
-                  <div className='flex justify-between py-1 border-b'>
-                    <span className='text-muted-foreground'>Category:</span>
-                    <Badge variant='outline'>{viewItem.category}</Badge>
-                  </div>
-                  <div className='flex justify-between py-1 border-b'>
-                    <span className='text-muted-foreground'>File Size:</span>
-                    <span className='font-mono'>{viewItem.file_size || '—'}</span>
-                  </div>
-                  <div className='flex justify-between py-1 border-b'>
-                    <span className='text-muted-foreground'>Assigned Course:</span>
-                    <span className='font-medium'>{viewItem.recorded_session?.title || 'General'}</span>
-                  </div>
-                  <div className='flex justify-between py-1 border-b'>
-                    <span className='text-muted-foreground'>Downloads:</span>
-                    <span className='font-semibold'>{viewItem.download_count}</span>
-                  </div>
-                  <div className='flex justify-between py-1 border-b'>
-                    <span className='text-muted-foreground'>Status:</span>
-                    <Badge variant={viewItem.is_active ? 'default' : 'secondary'}>
-                      {viewItem.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  {viewItem.description && (
-                    <div className='pt-2'>
-                      <span className='text-muted-foreground block mb-1'>Description:</span>
-                      <p className='p-2.5 rounded-md bg-muted/40 text-xs'>{viewItem.description}</p>
-                    </div>
-                  )}
+            {viewItem && (
+              <div className='space-y-4 py-2 text-sm'>
+                <div>
+                  <p className='text-xs text-muted-foreground'>Title</p>
+                  <p className='font-semibold text-base mt-0.5'>{viewItem.title}</p>
                 </div>
 
-                <DialogFooter className='gap-2 sm:gap-0'>
+                <div>
+                  <p className='text-xs text-muted-foreground'>Linked Masterclass</p>
+                  <p className='font-medium mt-0.5'>
+                    {viewItem.recorded_session?.title || viewItem.session?.title || 'None'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className='text-xs text-muted-foreground'>File Name &amp; Size</p>
+                  <p className='font-mono text-xs mt-0.5 line-clamp-1'>{viewItem.file_name}</p>
+                  <p className='text-xs text-muted-foreground uppercase mt-0.5'>PDF • {viewItem.file_size}</p>
+                </div>
+
+                <div className='pt-2 flex justify-end gap-2'>
                   {viewItem.file_url && (
-                    <a
-                      href={viewItem.file_url}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 gap-1.5'
-                    >
-                      <Download className='h-4 w-4' /> Download File
-                    </a>
+                    <Button asChild variant='default' size='sm' className='gap-1.5'>
+                      <a href={viewItem.file_url} target='_blank' rel='noopener noreferrer'>
+                        <Download className='h-4 w-4' /> Download PDF
+                      </a>
+                    </Button>
                   )}
-                  <Button variant='outline' onClick={() => setViewItem(null)}>
+                  <Button variant='outline' size='sm' onClick={() => setViewItem(null)}>
                     Close
                   </Button>
-                </DialogFooter>
-              </>
+                </div>
+              </div>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation */}
+        {/* Delete Single Resource Confirmation */}
         <ConfirmDialog
-          open={deleteItem !== null}
+          open={!!deleteItem}
           onOpenChange={(open) => !open && setDeleteItem(null)}
-          handleConfirm={handleDeleteConfirm}
-          isLoading={isDeleting}
-          title='Delete Resource?'
-          desc={
-            deleteItem
-              ? `Are you sure you want to delete "${deleteItem.title}"? This will permanently remove the uploaded file from the server.`
-              : ''
-          }
+          title='Delete PDF'
+          desc={`Are you sure you want to delete "${deleteItem?.title}"? The uploaded PDF file will be permanently removed.`}
           confirmText='Delete'
           destructive
+          isLoading={isDeleting}
+          handleConfirm={handleDelete}
         />
 
         {/* Bulk Delete Confirmation */}
         <ConfirmDialog
           open={isBulkDeletingOpen}
           onOpenChange={setIsBulkDeletingOpen}
-          handleConfirm={handleBulkDeleteConfirm}
-          isLoading={isBulkDeleting}
-          title='Delete Selected Resources?'
-          desc={`Are you sure you want to delete ${selectedIds.length} selected resources? This action cannot be undone.`}
-          confirmText='Delete All'
+          title='Delete Selected PDFs'
+          desc={`Are you sure you want to delete ${selectedIds.length} selected PDFs? All associated files will be deleted.`}
+          confirmText='Delete Selected'
           destructive
+          isLoading={isBulkDeleting}
+          handleConfirm={handleBulkDelete}
         />
       </Main>
     </>

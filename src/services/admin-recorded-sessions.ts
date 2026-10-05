@@ -30,6 +30,7 @@ export interface RecordedSessionItem {
   order_column: number
   category?: SessionCategoryObj | null
   instructor?: InstructorItem | null
+  resource?: { id: number; title: string; file_name: string; file_size?: string; file_url?: string; is_active: boolean } | null
   formatted_original_price?: string | null
   formatted_discount_price?: string | null
   created_at?: string

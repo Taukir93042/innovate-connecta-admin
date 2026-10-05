@@ -15,7 +15,10 @@ import {
   IndianRupee,
   GraduationCap,
   FolderTree,
+  FileText,
+  Download,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -93,6 +96,11 @@ export function RecordedSessionForm({
     initialData?.thumbnail_url || null
   )
 
+  // Resource PDF state
+  const [resourceFile, setResourceFile] = useState<File | null>(null)
+  const [existingResource, setExistingResource] = useState(initialData?.resource || null)
+  const [removeResource, setRemoveResource] = useState(false)
+
   // Remote data lists
   const [categories, setCategories] = useState<SessionCategoryItem[]>([])
   const [instructors, setInstructors] = useState<InstructorItem[]>([])
@@ -119,6 +127,7 @@ export function RecordedSessionForm({
       setIsActive(initialData.is_active !== undefined ? initialData.is_active : true)
       setIsFeatured(initialData.is_featured !== undefined ? initialData.is_featured : false)
       setThumbnailPreview(initialData.thumbnail_url || null)
+      setExistingResource(initialData.resource || null)
     }
   }, [initialData])
 
@@ -172,6 +181,24 @@ export function RecordedSessionForm({
     setThumbnailPreview(null)
   }
 
+  const handleResourceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const f = e.target.files[0]
+      if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
+        toast.error('Only PDF files (.pdf) are allowed.')
+        e.target.value = ''
+        return
+      }
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error('PDF file size must not exceed 20 MB.')
+        e.target.value = ''
+        return
+      }
+      setResourceFile(f)
+      setRemoveResource(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -210,28 +237,30 @@ export function RecordedSessionForm({
         formData.append('thumbnail', '')
       }
 
-      if (isEdit && initialData?.id) {
-        await adminRecordedSessionService.updateRecordedSession(
-          initialData.id,
-          formData
-        )
+      // Resource PDF File
+      if (resourceFile) {
+        formData.append('resource_file', resourceFile)
+      }
+      if (removeResource) {
+        formData.append('remove_resource', '1')
+      }
+
+      if (isEdit && initialData) {
+        formData.append('_method', 'PUT')
+        await adminRecordedSessionService.updateRecordedSession(initialData.id, formData)
+        toast.success('Recorded session & resources updated successfully!')
       } else {
         await adminRecordedSessionService.createRecordedSession(formData)
+        toast.success('Recorded session & resources created successfully!')
       }
 
       navigate({ to: '/recorded-sessions' })
     } catch (err: any) {
-      console.error('Failed to save recorded session:', err)
+      console.error('Save failed', err)
+      const msg = err.response?.data?.message || err.message || 'Failed to save recorded session.'
+      toast.error(msg)
       if (err.response?.data?.errors) {
-        const apiErrors: Record<string, string> = {}
-        Object.entries(err.response.data.errors).forEach(([k, v]: any) => {
-          apiErrors[k] = Array.isArray(v) ? v[0] : String(v)
-        })
-        setErrors(apiErrors)
-      } else if (err.response?.data?.message) {
-        setErrors({ form: err.response.data.message })
-      } else {
-        setErrors({ form: 'An unexpected error occurred while saving.' })
+        setErrors(err.response.data.errors)
       }
     } finally {
       setIsSubmitting(false)
@@ -239,9 +268,9 @@ export function RecordedSessionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-6 max-w-6xl mx-auto pb-16'>
-      {/* Top Header Bar */}
-      <div className='flex flex-wrap items-center justify-between gap-4 border-b pb-4'>
+    <form onSubmit={handleSubmit} className='space-y-6 pb-12'>
+      {/* Top Bar / Header with Action Buttons */}
+      <div className='flex flex-wrap items-center justify-between gap-4'>
         <div className='flex items-center gap-3'>
           <Button
             type='button'
@@ -253,19 +282,22 @@ export function RecordedSessionForm({
           </Button>
           <div>
             <h1 className='text-xl font-bold tracking-tight'>
-              {isEdit ? 'Edit Recorded Session' : 'Create New Recorded Session'}
+              {isEdit ? 'Edit Recorded Masterclass' : 'Create New Recorded Masterclass'}
             </h1>
             <p className='text-xs text-muted-foreground'>
-              Manage course details, pricing, 2 rich text overview/highlights sections & instructor assignment.
+              {isEdit
+                ? 'Update video course curriculum, pricing, notes PDF & instructors.'
+                : 'Publish a new self-paced video course with attached study notes PDF.'}
             </p>
           </div>
         </div>
 
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-2'>
           <Button
             type='button'
-            variant='ghost'
+            variant='outline'
             onClick={() => navigate({ to: '/recorded-sessions' })}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
@@ -273,42 +305,35 @@ export function RecordedSessionForm({
             {isSubmitting ? (
               <>
                 <Loader2 className='h-4 w-4 animate-spin' />
-                Saving...
+                <span>Saving Course...</span>
               </>
             ) : (
               <>
                 <Save className='h-4 w-4' />
-                {isEdit ? 'Update Session' : 'Save Session'}
+                <span>{isEdit ? 'Update Course' : 'Publish Course'}</span>
               </>
             )}
           </Button>
         </div>
       </div>
 
-      {errors.form && (
-        <div className='p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium'>
-          {errors.form}
-        </div>
-      )}
-
-      {/* Main Grid Layout */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-        {/* Left 2 Columns: Main Details & 2 Rich Text Editors */}
+        {/* Left 2 Columns: Main Metadata & Editors */}
         <div className='lg:col-span-2 space-y-6'>
-          {/* Card 1: Core Course Info */}
+          {/* Card 1: Primary Course Info */}
           <Card>
             <CardHeader className='pb-3'>
               <CardTitle className='text-base flex items-center gap-2'>
-                <Video className='h-4 w-4 text-primary' /> Basic Information
+                <Video className='h-4 w-4 text-primary' /> Basic Course Identity
               </CardTitle>
               <CardDescription>
-                Title, subtitle/heading, and category mapping.
+                Provide the core title, punchy subheading, category and instructor.
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
-              {/* Title */}
+              {/* Course Title */}
               <div className='space-y-1.5'>
-                <Label htmlFor='title' className='text-sm font-medium'>
+                <Label htmlFor='title'>
                   Course Title <span className='text-destructive'>*</span>
                 </Label>
                 <Input
@@ -317,17 +342,16 @@ export function RecordedSessionForm({
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   className={errors.title ? 'border-destructive' : ''}
+                  required
                 />
                 {errors.title && (
                   <p className='text-xs text-destructive'>{errors.title}</p>
                 )}
               </div>
 
-              {/* Heading / Subtitle */}
+              {/* Subheading / Tagline */}
               <div className='space-y-1.5'>
-                <Label htmlFor='heading' className='text-sm font-medium'>
-                  Heading / Subtitle Tagline
-                </Label>
+                <Label htmlFor='heading'>Heading / Subtitle Tagline</Label>
                 <Input
                   id='heading'
                   placeholder='e.g. Step-by-step breakdown of STAR behavioral responses & ATS optimization.'
@@ -339,37 +363,29 @@ export function RecordedSessionForm({
                 </p>
               </div>
 
-              {/* Slug (Auto-filled from Title) */}
+              {/* URL Slug */}
               <div className='space-y-1.5'>
                 <div className='flex items-center justify-between'>
-                  <Label htmlFor='slug' className='text-sm font-medium'>
-                    URL Slug
-                  </Label>
-                  <span className='text-[11px] text-muted-foreground font-mono'>
-                    (Auto-filled from title)
-                  </span>
+                  <Label htmlFor='slug'>URL Slug</Label>
+                  <span className='text-[11px] text-muted-foreground'>(Auto-filled from title)</span>
                 </div>
                 <Input
                   id='slug'
                   placeholder='complete-tech-interview-resume-masterclass'
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  className={errors.slug ? 'border-destructive font-mono text-xs' : 'font-mono text-xs'}
                 />
-                {errors.slug && (
-                  <p className='text-xs text-destructive'>{errors.slug}</p>
-                )}
               </div>
 
-              {/* Category & Instructor Row */}
+              {/* Category & Instructor Grid */}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2'>
-                {/* Category Select */}
+                {/* Category Dropdown */}
                 <div className='space-y-1.5'>
-                  <Label className='text-sm font-medium flex items-center gap-1.5'>
+                  <Label htmlFor='category' className='flex items-center gap-1.5'>
                     <FolderTree className='h-3.5 w-3.5 text-muted-foreground' /> Category
                   </Label>
                   <Select value={categoryId} onValueChange={setCategoryId}>
-                    <SelectTrigger>
+                    <SelectTrigger id='category'>
                       <SelectValue placeholder='Select Course Category' />
                     </SelectTrigger>
                     <SelectContent>
@@ -382,13 +398,13 @@ export function RecordedSessionForm({
                   </Select>
                 </div>
 
-                {/* Instructor Select */}
+                {/* Instructor Dropdown */}
                 <div className='space-y-1.5'>
-                  <Label className='text-sm font-medium flex items-center gap-1.5'>
+                  <Label htmlFor='instructor' className='flex items-center gap-1.5'>
                     <GraduationCap className='h-3.5 w-3.5 text-muted-foreground' /> Assigned Instructor
                   </Label>
                   <Select value={instructorId} onValueChange={setInstructorId}>
-                    <SelectTrigger>
+                    <SelectTrigger id='instructor'>
                       <SelectValue placeholder='Select Instructor' />
                     </SelectTrigger>
                     <SelectContent>
@@ -404,7 +420,7 @@ export function RecordedSessionForm({
             </CardContent>
           </Card>
 
-          {/* Card 2: Pricing, Duration & Lessons */}
+          {/* Card 2: Pricing, Duration & Video URL */}
           <Card>
             <CardHeader className='pb-3'>
               <CardTitle className='text-base flex items-center gap-2'>
@@ -414,40 +430,40 @@ export function RecordedSessionForm({
                 Set the pricing structure and course volume meta.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className='space-y-4'>
               <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4'>
                 {/* Original Price */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='original-price' className='text-xs font-semibold text-muted-foreground uppercase'>
+                  <Label htmlFor='original_price' className='text-xs uppercase font-semibold text-muted-foreground'>
                     Original Price (₹)
                   </Label>
                   <Input
-                    id='original-price'
+                    id='original_price'
                     placeholder='1499'
                     value={originalPrice}
                     onChange={(e) => setOriginalPrice(e.target.value)}
                   />
-                  <span className='text-[10px] text-muted-foreground'>Strikethrough price</span>
+                  <p className='text-[11px] text-muted-foreground'>Strikethrough price</p>
                 </div>
 
-                {/* Discount Price */}
+                {/* Offer / Discount Price */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='discount-price' className='text-xs font-semibold text-emerald-600 uppercase'>
+                  <Label htmlFor='discount_price' className='text-xs uppercase font-semibold text-emerald-600'>
                     Offer Price (₹)
                   </Label>
                   <Input
-                    id='discount-price'
+                    id='discount_price'
                     placeholder='499'
                     value={discountPrice}
                     onChange={(e) => setDiscountPrice(e.target.value)}
-                    className='border-emerald-500/40 focus-visible:ring-emerald-500'
+                    className='font-bold text-emerald-600'
                   />
-                  <span className='text-[10px] text-emerald-600 font-medium'>Active selling price</span>
+                  <p className='text-[11px] text-muted-foreground'>Active selling price</p>
                 </div>
 
                 {/* Duration */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='duration' className='text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                  <Label htmlFor='duration' className='text-xs uppercase font-semibold text-muted-foreground flex items-center gap-1'>
                     <Clock className='h-3 w-3' /> Duration
                   </Label>
                   <Input
@@ -456,12 +472,12 @@ export function RecordedSessionForm({
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
                   />
-                  <span className='text-[10px] text-muted-foreground'>e.g. 3.5 Hours</span>
+                  <p className='text-[11px] text-muted-foreground'>e.g. 3.5 Hours</p>
                 </div>
 
-                {/* Lessons */}
+                {/* Lessons Count */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='lessons' className='text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                  <Label htmlFor='lessons' className='text-xs uppercase font-semibold text-muted-foreground flex items-center gap-1'>
                     <BookOpen className='h-3 w-3' /> Lessons Count
                   </Label>
                   <Input
@@ -470,17 +486,17 @@ export function RecordedSessionForm({
                     value={lessons}
                     onChange={(e) => setLessons(e.target.value)}
                   />
-                  <span className='text-[10px] text-muted-foreground'>e.g. 12 Lessons</span>
+                  <p className='text-[11px] text-muted-foreground'>e.g. 12 Lessons</p>
                 </div>
               </div>
 
-              {/* Preview Video URL */}
-              <div className='mt-4 pt-4 border-t space-y-1.5'>
-                <Label htmlFor='preview_video' className='text-sm font-medium flex items-center gap-1.5'>
+              {/* Preview Video / Embed URL */}
+              <div className='space-y-1.5 pt-2'>
+                <Label htmlFor='preview_video_url' className='flex items-center gap-1.5'>
                   <Video className='h-3.5 w-3.5 text-primary' /> Free Preview Video Embed / YouTube URL
                 </Label>
                 <Input
-                  id='preview_video'
+                  id='preview_video_url'
                   placeholder='https://www.youtube.com/embed/dQw4w9WgXcQ'
                   value={previewVideoUrl}
                   onChange={(e) => setPreviewVideoUrl(e.target.value)}
@@ -544,9 +560,91 @@ export function RecordedSessionForm({
           </Card>
         </div>
 
-        {/* Right 1 Column: Thumbnail & Publishing Status */}
+        {/* Right 1 Column: Thumbnail, Resources & Publishing Status */}
         <div className='space-y-6'>
-          {/* Card: Thumbnail Image */}
+          {/* Card 1: Course PDF Resource (Study Notes) */}
+          <Card className='border-primary/20 shadow-sm'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-base flex items-center gap-2'>
+                <FileText className='h-4 w-4 text-red-500' /> Course PDF Resource
+              </CardTitle>
+              <CardDescription>
+                Attach 1 PDF notes file (max 20 MB) for enrolled students.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              {existingResource && !removeResource ? (
+                <div className='p-3 rounded-lg border bg-muted/40 space-y-2.5'>
+                  <div className='flex items-start justify-between gap-2'>
+                    <div className='flex items-center gap-2.5 min-w-0'>
+                      <div className='p-2 rounded bg-red-500/10 text-red-500 flex-shrink-0'>
+                        <FileText className='h-4 w-4' />
+                      </div>
+                      <div className='min-w-0'>
+                        <p className='text-xs font-semibold truncate text-foreground'>
+                          {existingResource.file_name}
+                        </p>
+                        <p className='text-[11px] text-muted-foreground uppercase font-mono mt-0.5'>
+                          PDF {existingResource.file_size ? `• ${existingResource.file_size}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => {
+                        setRemoveResource(true)
+                        setResourceFile(null)
+                      }}
+                      className='text-muted-foreground hover:text-destructive p-1 rounded transition'
+                      title='Remove attached PDF'
+                    >
+                      <X className='h-4 w-4' />
+                    </button>
+                  </div>
+
+                  {existingResource.file_url && (
+                    <a
+                      href={existingResource.file_url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-medium'
+                    >
+                      <Download className='h-3.5 w-3.5' /> Preview / Download Current PDF
+                    </a>
+                  )}
+
+                  <div className='pt-2 border-t space-y-1.5'>
+                    <Label htmlFor='replace-pdf-input' className='text-xs text-muted-foreground'>
+                      Upload Replacement PDF:
+                    </Label>
+                    <Input
+                      id='replace-pdf-input'
+                      type='file'
+                      accept='.pdf,application/pdf'
+                      onChange={handleResourceFileChange}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className='space-y-2'>
+                  <Label htmlFor='resource-pdf-input' className='text-xs font-semibold'>
+                    Upload PDF Notes File
+                  </Label>
+                  <Input
+                    id='resource-pdf-input'
+                    type='file'
+                    accept='.pdf,application/pdf'
+                    onChange={handleResourceFileChange}
+                  />
+                  <p className='text-[11px] text-muted-foreground'>
+                    Single PDF file up to 20 MB. Auto-unlocked for students who enroll.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Thumbnail Image */}
           <Card>
             <CardHeader className='pb-3'>
               <CardTitle className='text-base flex items-center gap-2'>
@@ -602,7 +700,7 @@ export function RecordedSessionForm({
             </CardContent>
           </Card>
 
-          {/* Card: Status & Visibility */}
+          {/* Card 3: Status & Visibility */}
           <Card>
             <CardHeader className='pb-3'>
               <CardTitle className='text-base'>Visibility & Status</CardTitle>
@@ -625,12 +723,10 @@ export function RecordedSessionForm({
                   onCheckedChange={setIsActive}
                 />
               </div>
-
-
             </CardContent>
           </Card>
 
-          {/* Card: Instructor Quick Preview */}
+          {/* Card 4: Instructor Quick Preview */}
           {instructorId && (
             <Card>
               <CardHeader className='pb-2'>
