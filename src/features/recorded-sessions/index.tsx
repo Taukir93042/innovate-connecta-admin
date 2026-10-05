@@ -9,7 +9,6 @@ import {
   Trash2,
   Edit,
   Eye,
-  Sparkles,
   Video,
   Clock,
   BookOpen,
@@ -126,17 +125,6 @@ export function RecordedSessions() {
       )
     } catch (err) {
       console.error('Failed to toggle status', err)
-    }
-  }
-
-  const handleToggleFeatured = async (session: RecordedSessionItem) => {
-    try {
-      await adminRecordedSessionService.toggleRecordedSessionFeatured(session.id)
-      setSessions((prev) =>
-        prev.map((s) => (s.id === session.id ? { ...s, is_featured: !s.is_featured } : s))
-      )
-    } catch (err) {
-      console.error('Failed to toggle featured', err)
     }
   }
 
@@ -289,7 +277,6 @@ export function RecordedSessions() {
               <TableHead>Instructor</TableHead>
               <TableHead>Duration & Lessons</TableHead>
               <TableHead>Pricing</TableHead>
-              <TableHead className='text-center'>Featured</TableHead>
               <TableHead className='text-center'>Status</TableHead>
               <TableHead className='text-right'>Actions</TableHead>
             </TableRow>
@@ -297,7 +284,7 @@ export function RecordedSessions() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} className='h-36 text-center'>
+                <TableCell colSpan={9} className='h-36 text-center'>
                   <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
                     <Loader2 className='h-6 w-6 animate-spin text-primary' />
                     <span>Loading recorded sessions...</span>
@@ -306,7 +293,7 @@ export function RecordedSessions() {
               </TableRow>
             ) : sessions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className='h-36 text-center text-muted-foreground'>
+                <TableCell colSpan={9} className='h-36 text-center text-muted-foreground'>
                   No recorded sessions found. Click "Create Recorded Session" to add one.
                 </TableCell>
               </TableRow>
@@ -399,22 +386,6 @@ export function RecordedSessions() {
                         </div>
                       )}
                     </div>
-                  </TableCell>
-
-                  {/* Featured Toggle */}
-                  <TableCell className='text-center'>
-                    <button
-                      type='button'
-                      onClick={() => handleToggleFeatured(session)}
-                      className={`p-1.5 rounded-full transition ${
-                        session.is_featured
-                          ? 'text-amber-500 hover:text-amber-600 bg-amber-50 dark:bg-amber-950/40'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                      }`}
-                      title={session.is_featured ? 'Featured' : 'Not Featured'}
-                    >
-                      <Sparkles className='h-4 w-4' />
-                    </button>
                   </TableCell>
 
                   {/* Active Toggle */}
