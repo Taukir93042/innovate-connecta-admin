@@ -34,6 +34,7 @@ import { Route as AuthenticatedRecordedOrdersOrderIdRouteImport } from './routes
 import { Route as AuthenticatedRecordedSessionsIndexRouteImport } from './routes/_authenticated/recorded-sessions/index'
 import { Route as AuthenticatedRecordedSessionsRecordedSessionIdRouteImport } from './routes/_authenticated/recorded-sessions/$recordedSessionId'
 import { Route as AuthenticatedRecordedSessionsCreateRouteImport } from './routes/_authenticated/recorded-sessions/create'
+import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authenticated/resources/index'
 import { Route as AuthenticatedSessionBookingsIndexRouteImport } from './routes/_authenticated/session-bookings/index'
 import { Route as AuthenticatedSessionCategoriesIndexRouteImport } from './routes/_authenticated/session-categories/index'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -182,6 +183,12 @@ const AuthenticatedRecordedSessionsCreateRoute =
     path: '/recorded-sessions/create',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedResourcesIndexRoute =
+  AuthenticatedResourcesIndexRouteImport.update({
+    id: '/resources/',
+    path: '/resources/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSessionBookingsIndexRoute =
   AuthenticatedSessionBookingsIndexRouteImport.update({
     id: '/session-bookings/',
@@ -278,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/instructors/': typeof AuthenticatedInstructorsIndexRoute
   '/recorded-orders/': typeof AuthenticatedRecordedOrdersIndexRoute
   '/recorded-sessions/': typeof AuthenticatedRecordedSessionsIndexRoute
+  '/resources/': typeof AuthenticatedResourcesIndexRoute
   '/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -314,6 +322,7 @@ export interface FileRoutesByTo {
   '/instructors': typeof AuthenticatedInstructorsIndexRoute
   '/recorded-orders': typeof AuthenticatedRecordedOrdersIndexRoute
   '/recorded-sessions': typeof AuthenticatedRecordedSessionsIndexRoute
+  '/resources': typeof AuthenticatedResourcesIndexRoute
   '/session-bookings': typeof AuthenticatedSessionBookingsIndexRoute
   '/session-categories': typeof AuthenticatedSessionCategoriesIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
@@ -353,6 +362,7 @@ export interface FileRoutesById {
   '/_authenticated/instructors/': typeof AuthenticatedInstructorsIndexRoute
   '/_authenticated/recorded-orders/': typeof AuthenticatedRecordedOrdersIndexRoute
   '/_authenticated/recorded-sessions/': typeof AuthenticatedRecordedSessionsIndexRoute
+  '/_authenticated/resources/': typeof AuthenticatedResourcesIndexRoute
   '/_authenticated/session-bookings/': typeof AuthenticatedSessionBookingsIndexRoute
   '/_authenticated/session-categories/': typeof AuthenticatedSessionCategoriesIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/instructors/'
     | '/recorded-orders/'
     | '/recorded-sessions/'
+    | '/resources/'
     | '/session-bookings/'
     | '/session-categories/'
     | '/sessions/'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/instructors'
     | '/recorded-orders'
     | '/recorded-sessions'
+    | '/resources'
     | '/session-bookings'
     | '/session-categories'
     | '/sessions'
@@ -466,6 +478,7 @@ export interface FileRouteTypes {
     | '/_authenticated/instructors/'
     | '/_authenticated/recorded-orders/'
     | '/_authenticated/recorded-sessions/'
+    | '/_authenticated/resources/'
     | '/_authenticated/session-bookings/'
     | '/_authenticated/session-categories/'
     | '/_authenticated/sessions/'
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecordedSessionsCreateRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resources/': {
+      id: '/_authenticated/resources/'
+      path: '/resources'
+      fullPath: '/resources/'
+      preLoaderRoute: typeof AuthenticatedResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/session-bookings/': {
       id: '/_authenticated/session-bookings/'
       path: '/session-bookings'
@@ -782,6 +802,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInstructorsIndexRoute: typeof AuthenticatedInstructorsIndexRoute
   AuthenticatedRecordedOrdersIndexRoute: typeof AuthenticatedRecordedOrdersIndexRoute
   AuthenticatedRecordedSessionsIndexRoute: typeof AuthenticatedRecordedSessionsIndexRoute
+  AuthenticatedResourcesIndexRoute: typeof AuthenticatedResourcesIndexRoute
   AuthenticatedSessionBookingsIndexRoute: typeof AuthenticatedSessionBookingsIndexRoute
   AuthenticatedSessionCategoriesIndexRoute: typeof AuthenticatedSessionCategoriesIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -810,6 +831,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecordedOrdersIndexRoute: AuthenticatedRecordedOrdersIndexRoute,
   AuthenticatedRecordedSessionsIndexRoute:
     AuthenticatedRecordedSessionsIndexRoute,
+  AuthenticatedResourcesIndexRoute: AuthenticatedResourcesIndexRoute,
   AuthenticatedSessionBookingsIndexRoute:
     AuthenticatedSessionBookingsIndexRoute,
   AuthenticatedSessionCategoriesIndexRoute:

@@ -12,6 +12,7 @@ import {
   ReceiptText,
   Mail,
   Layers,
+  FolderOpen,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -86,6 +87,11 @@ export const sidebarData: SidebarData = {
           title: 'Recorded Sessions',
           url: '/recorded-sessions',
           icon: Video,
+        },
+        {
+          title: 'Resources',
+          url: '/resources',
+          icon: FolderOpen,
         },
         {
           title: 'Session Categories',
