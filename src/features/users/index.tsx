@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import {
   Search as SearchIcon,
   Eye,
-  EyeOff,
   Users as UsersIcon,
   Loader2,
   Mail,
@@ -14,9 +13,6 @@ import {
   ExternalLink,
   Download,
   Trash2,
-  Key,
-  Copy,
-  Check,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminUserService, type UserItem } from '@/services/admin-users'
@@ -62,9 +58,6 @@ export function Users() {
   const [deleteItem, setDeleteItem] = useState<UserItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Password visibility & copied state
-  const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({})
-  const [copiedId, setCopiedId] = useState<number | null>(null)
 
   // PDF Preview modal state
   const [previewPdfUrl, setPreviewPdfUrl] = useState<{
@@ -135,16 +128,6 @@ export function Users() {
     }
   }
 
-  const togglePassword = (id: number) => {
-    setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }))
-  }
-
-  const handleCopyPassword = (id: number, pw: string) => {
-    navigator.clipboard.writeText(pw)
-    setCopiedId(id)
-    toast.success('Password copied to clipboard')
-    setTimeout(() => setCopiedId(null), 2000)
-  }
 
   const getUserAvatarUrl = (user: UserItem) => {
     if (user.avatar_url) return getStorageUrl(user.avatar_url)
@@ -249,7 +232,6 @@ export function Users() {
                   <TableHead className='min-w-[170px]'>Name</TableHead>
                   <TableHead className='min-w-[190px]'>Email</TableHead>
                   <TableHead className='w-[140px]'>Phone No</TableHead>
-                  <TableHead className='w-[140px]'>Password</TableHead>
                   <TableHead className='w-[120px]'>Resume</TableHead>
                   <TableHead className='w-[90px]'>Status</TableHead>
                   <TableHead className='w-[120px]'>Registered</TableHead>
@@ -306,46 +288,6 @@ export function Users() {
                         )}
                       </TableCell>
 
-                      {/* Password Column */}
-                      <TableCell className='py-3'>
-                        {item.plain_password ? (
-                          <div className='flex items-center gap-1'>
-                            <span className='font-mono text-xs bg-muted/60 px-2 py-0.5 rounded border border-border/50 select-all font-medium text-foreground max-w-[90px] truncate'>
-                              {showPasswords[item.id] ? item.plain_password : '••••••••'}
-                            </span>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='size-6 text-muted-foreground hover:text-foreground shrink-0'
-                              onClick={() => togglePassword(item.id)}
-                              title={showPasswords[item.id] ? 'Hide password' : 'Show password'}
-                            >
-                              {showPasswords[item.id] ? (
-                                <EyeOff className='size-3.5' />
-                              ) : (
-                                <Eye className='size-3.5' />
-                              )}
-                            </Button>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='size-6 text-muted-foreground hover:text-foreground shrink-0'
-                              onClick={() => handleCopyPassword(item.id, item.plain_password!)}
-                              title='Copy password'
-                            >
-                              {copiedId === item.id ? (
-                                <Check className='size-3.5 text-emerald-500' />
-                              ) : (
-                                <Copy className='size-3.5' />
-                              )}
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className='font-mono text-xs text-muted-foreground tracking-wider'>
-                            ••••••••
-                          </span>
-                        )}
-                      </TableCell>
 
                       {/* Resume Column */}
                       <TableCell className='py-3'>
@@ -503,16 +445,6 @@ export function Users() {
                     </div>
                   </div>
 
-                  {/* Password */}
-                  <div className='flex items-start gap-2.5 p-2.5 rounded-md border bg-muted/10'>
-                    <Key className='h-4 w-4 text-muted-foreground mt-0.5 shrink-0' />
-                    <div className='min-w-0 flex-1'>
-                      <div className='text-xs font-medium text-muted-foreground'>Account Password</div>
-                      <div className='font-mono text-xs font-semibold text-foreground truncate mt-0.5'>
-                        {viewItem.plain_password || 'Encrypted (Stored securely)'}
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Field / Specialization */}
                   <div className='flex items-start gap-2.5 p-2.5 rounded-md border bg-muted/10'>
