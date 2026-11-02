@@ -8,6 +8,7 @@ export interface UserItem {
   field?: string | null
   avatar?: string | null
   avatar_url?: string | null
+  plain_password?: string | null
   resume_path?: string | null
   resume_url?: string | null
   resume_title?: string | null
