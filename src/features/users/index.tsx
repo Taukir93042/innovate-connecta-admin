@@ -240,8 +240,11 @@ export function Users() {
               </TableHeader>
               <TableBody>
                 {users.map((item, index) => {
-                  const effectiveResumeUrl =
-                    item.resume_url || (item.resume_path ? getStorageUrl(item.resume_path) : null)
+                  const effectiveResumeUrl = item.resume_url
+                    ? getStorageUrl(item.resume_url)
+                    : item.resume_path
+                      ? getStorageUrl(item.resume_path)
+                      : null
 
                   return (
                     <TableRow key={item.id} className='hover:bg-muted/40'>
@@ -486,9 +489,11 @@ export function Users() {
                         className='h-8 gap-1.5 text-xs'
                         onClick={() =>
                           setPreviewPdfUrl({
-                            url:
-                              viewItem.resume_url ||
-                              (viewItem.resume_path ? getStorageUrl(viewItem.resume_path) : '#'),
+                            url: viewItem.resume_url
+                              ? getStorageUrl(viewItem.resume_url)
+                              : viewItem.resume_path
+                                ? getStorageUrl(viewItem.resume_path)
+                                : '#',
                             title: viewItem.resume_title || `${viewItem.name} - Resume`,
                             userName: viewItem.name,
                           })
