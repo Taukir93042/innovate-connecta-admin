@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Search as SearchIcon,
   Eye,
+  EyeOff,
   Users as UsersIcon,
   Loader2,
   Mail,
@@ -12,6 +13,10 @@ import {
   FileText,
   ExternalLink,
   Download,
+  Trash2,
+  Key,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminUserService, type UserItem } from '@/services/admin-users'
@@ -26,7 +31,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Table,
   TableBody,
@@ -51,6 +57,14 @@ export function Users() {
 
   // View user modal state
   const [viewItem, setViewItem] = useState<UserItem | null>(null)
+
+  // Single delete modal state
+  const [deleteItem, setDeleteItem] = useState<UserItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  // Password visibility & copied state
+  const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({})
+  const [copiedId, setCopiedId] = useState<number | null>(null)
 
   // PDF Preview modal state
   const [previewPdfUrl, setPreviewPdfUrl] = useState<{
@@ -104,6 +118,38 @@ export function Users() {
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err))
     }
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteItem) return
+    try {
+      setIsDeleting(true)
+      await adminUserService.deleteUser(deleteItem.id)
+      setUsers((prev) => prev.filter((u) => u.id !== deleteItem.id))
+      toast.success(`User "${deleteItem.name}" deleted successfully.`)
+      setDeleteItem(null)
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'Failed to delete user.'))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const togglePassword = (id: number) => {
+    setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const handleCopyPassword = (id: number, pw: string) => {
+    navigator.clipboard.writeText(pw)
+    setCopiedId(id)
+    toast.success('Password copied to clipboard')
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const getUserAvatarUrl = (user: UserItem) => {
+    if (user.avatar_url) return getStorageUrl(user.avatar_url)
+    if (user.avatar) return getStorageUrl(user.avatar)
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=4f46e5&color=fff&bold=true`
   }
 
   const formatDate = (dateString?: string) => {
@@ -199,14 +245,15 @@ export function Users() {
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='w-[70px]'>S.No</TableHead>
+                  <TableHead className='w-[60px]'>S.No</TableHead>
                   <TableHead className='min-w-[170px]'>Name</TableHead>
-                  <TableHead className='min-w-[200px]'>Email</TableHead>
-                  <TableHead className='w-[150px]'>Phone No</TableHead>
-                  <TableHead className='w-[130px]'>Resume</TableHead>
-                  <TableHead className='w-[130px]'>Status</TableHead>
-                  <TableHead className='w-[130px]'>Registered</TableHead>
-                  <TableHead className='w-[80px] text-end'>Actions</TableHead>
+                  <TableHead className='min-w-[190px]'>Email</TableHead>
+                  <TableHead className='w-[140px]'>Phone No</TableHead>
+                  <TableHead className='w-[140px]'>Password</TableHead>
+                  <TableHead className='w-[120px]'>Resume</TableHead>
+                  <TableHead className='w-[90px]'>Status</TableHead>
+                  <TableHead className='w-[120px]'>Registered</TableHead>
+                  <TableHead className='w-[90px] text-end'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -221,10 +268,11 @@ export function Users() {
                         {index + 1}
                       </TableCell>
 
-                      {/* Name */}
+                      {/* Name & Avatar */}
                       <TableCell className='py-3'>
                         <div className='flex items-center gap-3'>
                           <Avatar className='h-9 w-9 border shrink-0'>
+                            <AvatarImage src={getUserAvatarUrl(item)} alt={item.name} />
                             <AvatarFallback className='bg-primary/15 text-primary font-semibold text-xs'>
                               {getDisplayNameInitials(item.name)}
                             </AvatarFallback>
@@ -252,6 +300,47 @@ export function Users() {
                           </div>
                         ) : (
                           <span className='text-xs text-muted-foreground italic'>—</span>
+                        )}
+                      </TableCell>
+
+                      {/* Password Column */}
+                      <TableCell className='py-3'>
+                        {item.plain_password ? (
+                          <div className='flex items-center gap-1'>
+                            <span className='font-mono text-xs bg-muted/60 px-2 py-0.5 rounded border border-border/50 select-all font-medium text-foreground max-w-[90px] truncate'>
+                              {showPasswords[item.id] ? item.plain_password : '••••••••'}
+                            </span>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='size-6 text-muted-foreground hover:text-foreground shrink-0'
+                              onClick={() => togglePassword(item.id)}
+                              title={showPasswords[item.id] ? 'Hide password' : 'Show password'}
+                            >
+                              {showPasswords[item.id] ? (
+                                <EyeOff className='size-3.5' />
+                              ) : (
+                                <Eye className='size-3.5' />
+                              )}
+                            </Button>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='size-6 text-muted-foreground hover:text-foreground shrink-0'
+                              onClick={() => handleCopyPassword(item.id, item.plain_password!)}
+                              title='Copy password'
+                            >
+                              {copiedId === item.id ? (
+                                <Check className='size-3.5 text-emerald-500' />
+                              ) : (
+                                <Copy className='size-3.5' />
+                              )}
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className='font-mono text-xs text-muted-foreground tracking-wider'>
+                            ••••••••
+                          </span>
                         )}
                       </TableCell>
 
@@ -284,25 +373,13 @@ export function Users() {
                         )}
                       </TableCell>
 
-                      {/* Status & Switch */}
+                      {/* Status & Switch (Active badge removed) */}
                       <TableCell className='py-3'>
-                        <div className='flex items-center gap-2'>
-                          <Switch
-                            checked={item.is_active}
-                            onCheckedChange={() => handleToggleStatus(item)}
-                            aria-label='Toggle status'
-                          />
-                          <Badge
-                            variant={item.is_active ? 'default' : 'secondary'}
-                            className={
-                              item.is_active
-                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px] font-medium'
-                                : 'text-muted-foreground text-[11px]'
-                            }
-                          >
-                            {item.is_active ? 'Active' : 'Blocked'}
-                          </Badge>
-                        </div>
+                        <Switch
+                          checked={item.is_active}
+                          onCheckedChange={() => handleToggleStatus(item)}
+                          aria-label='Toggle status'
+                        />
                       </TableCell>
 
                       {/* Registered Date */}
@@ -313,9 +390,9 @@ export function Users() {
                         </span>
                       </TableCell>
 
-                      {/* Actions: VIEW */}
+                      {/* Actions: VIEW & DELETE */}
                       <TableCell className='py-3 text-end'>
-                        <div className='flex items-center justify-end'>
+                        <div className='flex items-center justify-end gap-1'>
                           <Button
                             variant='ghost'
                             size='icon'
@@ -324,6 +401,15 @@ export function Users() {
                             title='View user profile'
                           >
                             <Eye className='size-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                            onClick={() => setDeleteItem(item)}
+                            title='Delete user'
+                          >
+                            <Trash2 className='size-4' />
                           </Button>
                         </div>
                       </TableCell>
@@ -335,6 +421,19 @@ export function Users() {
           </div>
         )}
       </Main>
+
+      {/* Delete Single Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteItem}
+        onOpenChange={(open) => !open && setDeleteItem(null)}
+        title='Delete User Account?'
+        desc={`Are you sure you want to permanently delete user "${deleteItem?.name}" (${deleteItem?.email})? This action cannot be undone.`}
+        confirmText='Delete'
+        destructive
+        isLoading={isDeleting}
+        handleConfirm={handleDeleteConfirm}
+        className='sm:max-w-md'
+      />
 
       {/* View User Details Dialog */}
       <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
@@ -355,6 +454,7 @@ export function Users() {
                 {/* User Header Avatar & Name */}
                 <div className='flex items-center gap-3.5 p-3 rounded-lg border bg-muted/20'>
                   <Avatar className='h-12 w-12 border shrink-0'>
+                    <AvatarImage src={getUserAvatarUrl(viewItem)} alt={viewItem.name} />
                     <AvatarFallback className='bg-primary/15 text-primary font-bold text-sm'>
                       {getDisplayNameInitials(viewItem.name)}
                     </AvatarFallback>
@@ -396,6 +496,17 @@ export function Users() {
                       <div className='text-xs font-medium text-muted-foreground'>Phone Number</div>
                       <div className='font-mono text-xs font-medium truncate mt-0.5'>
                         {viewItem.phone || 'Not provided'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Password */}
+                  <div className='flex items-start gap-2.5 p-2.5 rounded-md border bg-muted/10'>
+                    <Key className='h-4 w-4 text-muted-foreground mt-0.5 shrink-0' />
+                    <div className='min-w-0 flex-1'>
+                      <div className='text-xs font-medium text-muted-foreground'>Account Password</div>
+                      <div className='font-mono text-xs font-semibold text-foreground truncate mt-0.5'>
+                        {viewItem.plain_password || 'Encrypted (Stored securely)'}
                       </div>
                     </div>
                   </div>

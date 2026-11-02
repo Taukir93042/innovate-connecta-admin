@@ -13,6 +13,7 @@ import {
   Mail,
   Layers,
   FolderOpen,
+  Award,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -92,6 +93,11 @@ export const sidebarData: SidebarData = {
           title: 'Resources',
           url: '/resources',
           icon: FolderOpen,
+        },
+        {
+          title: 'Certificates',
+          url: '/certificates',
+          icon: Award,
         },
         {
           title: 'Session Categories',
