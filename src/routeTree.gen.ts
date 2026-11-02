@@ -23,6 +23,7 @@ import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedCertificatesIndexRouteImport } from './routes/_authenticated/certificates/index'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts/index'
 import { Route as AuthenticatedFeedbacksIndexRouteImport } from './routes/_authenticated/feedbacks/index'
 import { Route as AuthenticatedGalleriesIndexRouteImport } from './routes/_authenticated/galleries/index'
@@ -115,6 +116,12 @@ const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCertificatesIndexRoute =
+  AuthenticatedCertificatesIndexRouteImport.update({
+    id: '/certificates/',
+    path: '/certificates/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedContactsIndexRoute =
@@ -277,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/certificates/': typeof AuthenticatedCertificatesIndexRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
   '/feedbacks/': typeof AuthenticatedFeedbacksIndexRoute
   '/galleries/': typeof AuthenticatedGalleriesIndexRoute
@@ -314,6 +322,7 @@ export interface FileRoutesByTo {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/certificates': typeof AuthenticatedCertificatesIndexRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
   '/feedbacks': typeof AuthenticatedFeedbacksIndexRoute
   '/galleries': typeof AuthenticatedGalleriesIndexRoute
@@ -354,6 +363,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
+  '/_authenticated/certificates/': typeof AuthenticatedCertificatesIndexRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
   '/_authenticated/feedbacks/': typeof AuthenticatedFeedbacksIndexRoute
   '/_authenticated/galleries/': typeof AuthenticatedGalleriesIndexRoute
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
+    | '/certificates/'
     | '/contacts/'
     | '/feedbacks/'
     | '/galleries/'
@@ -431,6 +442,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
+    | '/certificates'
     | '/contacts'
     | '/feedbacks'
     | '/galleries'
@@ -470,6 +482,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
+    | '/_authenticated/certificates/'
     | '/_authenticated/contacts/'
     | '/_authenticated/feedbacks/'
     | '/_authenticated/galleries/'
@@ -600,6 +613,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/certificates/': {
+      id: '/_authenticated/certificates/'
+      path: '/certificates'
+      fullPath: '/certificates/'
+      preLoaderRoute: typeof AuthenticatedCertificatesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contacts/': {
@@ -794,6 +814,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecordedOrdersOrderIdRoute: typeof AuthenticatedRecordedOrdersOrderIdRoute
   AuthenticatedRecordedSessionsRecordedSessionIdRoute: typeof AuthenticatedRecordedSessionsRecordedSessionIdRoute
   AuthenticatedRecordedSessionsCreateRoute: typeof AuthenticatedRecordedSessionsCreateRoute
+  AuthenticatedCertificatesIndexRoute: typeof AuthenticatedCertificatesIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
   AuthenticatedFeedbacksIndexRoute: typeof AuthenticatedFeedbacksIndexRoute
   AuthenticatedGalleriesIndexRoute: typeof AuthenticatedGalleriesIndexRoute
@@ -822,6 +843,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedRecordedSessionsRecordedSessionIdRoute,
   AuthenticatedRecordedSessionsCreateRoute:
     AuthenticatedRecordedSessionsCreateRoute,
+  AuthenticatedCertificatesIndexRoute: AuthenticatedCertificatesIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
   AuthenticatedFeedbacksIndexRoute: AuthenticatedFeedbacksIndexRoute,
   AuthenticatedGalleriesIndexRoute: AuthenticatedGalleriesIndexRoute,
