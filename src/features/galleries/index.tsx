@@ -556,16 +556,7 @@ export function Galleries() {
                             onCheckedChange={() => handleToggleStatus(item)}
                             aria-label='Toggle visibility'
                           />
-                          <Badge
-                            variant={item.is_active ? 'default' : 'secondary'}
-                            className={
-                              item.is_active
-                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                                : 'text-muted-foreground text-[11px]'
-                            }
-                          >
-                            {item.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
+
                         </div>
                       </TableCell>
 

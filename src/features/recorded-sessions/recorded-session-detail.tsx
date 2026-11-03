@@ -42,9 +42,7 @@ export function RecordedSessionDetail({
                 {session.category.name}
               </Badge>
             )}
-            <Badge variant={session.is_active ? 'default' : 'secondary'} className='text-xs'>
-              {session.is_active ? 'Active' : 'Inactive'}
-            </Badge>
+
             {session.is_featured && (
               <Badge className='bg-amber-500 hover:bg-amber-600 text-white text-xs gap-1'>
                 <Sparkles className='h-3 w-3' /> Featured

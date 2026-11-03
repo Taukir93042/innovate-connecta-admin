@@ -450,16 +450,7 @@ export function SessionCategoriesFeature() {
                           checked={item.is_active}
                           onCheckedChange={() => handleToggleStatus(item)}
                         />
-                        <Badge
-                          variant={item.is_active ? 'default' : 'secondary'}
-                          className={
-                            item.is_active
-                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px]'
-                              : 'text-[10px]'
-                          }
-                        >
-                          {item.is_active ? 'Active' : 'Hidden'}
-                        </Badge>
+
                       </div>
                     </TableCell>
 

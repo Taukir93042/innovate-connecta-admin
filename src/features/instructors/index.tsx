@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Table,
@@ -428,16 +427,7 @@ export function InstructorsFeature() {
                             checked={instructor.is_active}
                             onCheckedChange={() => handleToggleStatus(instructor)}
                           />
-                          <Badge
-                            variant={instructor.is_active ? 'default' : 'secondary'}
-                            className={
-                              instructor.is_active
-                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px]'
-                                : 'text-[10px]'
-                            }
-                          >
-                            {instructor.is_active ? 'Active' : 'Hidden'}
-                          </Badge>
+
                         </div>
                       </TableCell>
 
@@ -638,16 +628,7 @@ export function InstructorsFeature() {
             <>
               <DialogHeader>
                 <div className='flex items-center justify-between mb-2'>
-                  <Badge
-                    variant={viewItem.is_active ? 'default' : 'secondary'}
-                    className={
-                      viewItem.is_active
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs'
-                        : 'text-xs'
-                    }
-                  >
-                    {viewItem.is_active ? 'Active' : 'Hidden'}
-                  </Badge>
+
                 </div>
                 <div className='flex items-start gap-4 pt-1'>
                   <Avatar className='h-16 w-16 border shadow-sm'>
