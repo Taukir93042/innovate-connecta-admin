@@ -28,14 +28,13 @@ export function ForgotPassword() {
         </CardContent>
         <CardFooter>
           <p className='mx-auto px-8 text-center text-sm text-balance text-muted-foreground'>
-            Don't have an account?{' '}
+            Remembered your password?{' '}
             <Link
-              to='/sign-up'
-              className='underline underline-offset-4 hover:text-primary'
+              to='/sign-in'
+              className='underline underline-offset-4 hover:text-primary font-medium'
             >
-              Sign up
+              Back to Sign In
             </Link>
-            .
           </p>
         </CardFooter>
       </Card>

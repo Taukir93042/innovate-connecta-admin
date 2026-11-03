@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
 import {
+  adminCertificateService,
+  type CertificateItem,
+} from '@/services/admin-certificates'
+import { adminUserService, type UserItem } from '@/services/admin-users'
+import {
   Award,
   Plus,
   Search as SearchIcon,
@@ -13,39 +18,11 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  adminCertificateService,
-  type CertificateItem,
-} from '@/services/admin-certificates'
-import { adminUserService, type UserItem } from '@/services/admin-users'
 import { getApiErrorMessage } from '@/lib/api-client'
 import { getStorageUrl } from '@/lib/utils'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -54,8 +31,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
 import { PaginationBar } from '@/components/pagination-bar'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 
 const CERTIFICATE_TYPES = [
   'Course Completion Certificate',
@@ -278,8 +278,8 @@ export function Certificates() {
         {/* Top Header & Actions */}
         <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
           <div>
-            <h1 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
-              <Award className='h-6 w-6 text-purple-500' />
+            <h1 className='flex items-center gap-2 text-2xl font-bold tracking-tight'>
+              <Award className='h-6 w-6' />
               Certificates Management
             </h1>
             <p className='text-sm text-muted-foreground'>
@@ -289,7 +289,7 @@ export function Certificates() {
 
           <Button
             onClick={handleOpenCreate}
-            className='inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow'
+            className='inline-flex items-center gap-2 bg-primary from-indigo-600 to-purple-600 text-white shadow hover:from-indigo-700 hover:to-purple-700'
           >
             <Plus className='h-4 w-4' />
             Issue Certificate
@@ -297,13 +297,13 @@ export function Certificates() {
         </div>
 
         {/* Filters Bar */}
-        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-card p-3 shadow-xs'>
+        <div className='flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-xs sm:flex-row sm:items-center sm:justify-between'>
           <form
             onSubmit={handleSearchSubmit}
             className='flex flex-1 items-center gap-2'
           >
-            <div className='relative flex-1 max-w-sm'>
-              <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+            <div className='relative max-w-sm flex-1'>
+              <SearchIcon className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
               <Input
                 placeholder='Search title, candidate, cert no...'
                 value={search}
@@ -331,7 +331,7 @@ export function Certificates() {
           </form>
 
           <div className='flex items-center gap-2'>
-            <Label className='text-xs text-muted-foreground whitespace-nowrap'>
+            <Label className='text-xs whitespace-nowrap text-muted-foreground'>
               Filter Candidate:
             </Label>
             <Select
@@ -341,7 +341,7 @@ export function Certificates() {
                 setPage(1)
               }}
             >
-              <SelectTrigger className='w-[200px] h-9 text-xs'>
+              <SelectTrigger className='h-9 w-[200px] text-xs'>
                 <SelectValue placeholder='All Candidates' />
               </SelectTrigger>
               <SelectContent>
@@ -366,25 +366,27 @@ export function Certificates() {
           </div>
         ) : certificates.length === 0 ? (
           <div className='flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center'>
-            <Award className='h-12 w-12 text-muted-foreground/60 mb-2' />
+            <Award className='mb-2 h-12 w-12 text-muted-foreground/60' />
             <h3 className='text-lg font-semibold'>No certificates found</h3>
-            <p className='text-sm text-muted-foreground max-w-sm mb-4'>
+            <p className='mb-4 max-w-sm text-sm text-muted-foreground'>
               {search || selectedUserId !== 'all'
                 ? 'No certificates matched your search/filter criteria.'
                 : 'Click "Issue Certificate" above to issue a verified certificate to any candidate.'}
             </p>
             <Button onClick={handleOpenCreate} size='sm'>
-              <Plus className='h-4 w-4 mr-1' /> Issue First Certificate
+              <Plus className='mr-1 h-4 w-4' /> Issue First Certificate
             </Button>
           </div>
         ) : (
-          <div className='rounded-lg border bg-card shadow-xs overflow-hidden'>
+          <div className='overflow-hidden rounded-lg border bg-card shadow-xs'>
             <Table>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
                   <TableHead className='w-[50px]'>S.No</TableHead>
                   <TableHead className='min-w-[190px]'>Candidate</TableHead>
-                  <TableHead className='min-w-[200px]'>Certificate Title</TableHead>
+                  <TableHead className='min-w-[200px]'>
+                    Certificate Title
+                  </TableHead>
                   <TableHead className='w-[140px]'>Type</TableHead>
                   <TableHead className='w-[140px]'>Cert No</TableHead>
                   <TableHead className='w-[110px]'>Issue Date</TableHead>
@@ -398,8 +400,8 @@ export function Certificates() {
                   const certFileUrl = item.file_url
                     ? getStorageUrl(item.file_url)
                     : item.file_path
-                    ? getStorageUrl(item.file_path)
-                    : null
+                      ? getStorageUrl(item.file_path)
+                      : null
 
                   return (
                     <TableRow key={item.id} className='hover:bg-muted/40'>
@@ -410,7 +412,7 @@ export function Certificates() {
                       {/* Candidate User */}
                       <TableCell className='py-3'>
                         <div className='flex items-center gap-2.5'>
-                          <Avatar className='h-8 w-8 border shrink-0'>
+                          <Avatar className='h-8 w-8 shrink-0 border'>
                             <AvatarImage
                               src={
                                 item.user?.avatar_url
@@ -419,15 +421,17 @@ export function Certificates() {
                               }
                               alt={item.user?.name || 'User'}
                             />
-                            <AvatarFallback className='bg-purple-500/15 text-purple-600 font-semibold text-xs'>
-                              {(item.user?.name || 'U').slice(0, 2).toUpperCase()}
+                            <AvatarFallback className='bg-purple-500/15 text-xs font-semibold text-purple-600'>
+                              {(item.user?.name || 'U')
+                                .slice(0, 2)
+                                .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className='min-w-0'>
-                            <p className='font-semibold text-sm leading-none truncate'>
+                            <p className='truncate text-sm leading-none font-semibold'>
                               {item.user?.name || 'Unknown Candidate'}
                             </p>
-                            <p className='text-xs text-muted-foreground truncate mt-0.5'>
+                            <p className='mt-0.5 truncate text-xs text-muted-foreground'>
                               {item.user?.email || 'No email'}
                             </p>
                           </div>
@@ -436,7 +440,10 @@ export function Certificates() {
 
                       {/* Title */}
                       <TableCell className='py-3'>
-                        <p className='font-medium text-sm text-foreground line-clamp-1' title={item.title}>
+                        <p
+                          className='line-clamp-1 text-sm font-medium text-foreground'
+                          title={item.title}
+                        >
                           {item.title}
                         </p>
                         {item.file_size && (
@@ -450,7 +457,7 @@ export function Certificates() {
                       <TableCell className='py-3'>
                         <Badge
                           variant='outline'
-                          className='text-xs font-normal bg-purple-500/10 text-purple-600 border-purple-500/20'
+                          className='text-xs font-normal'
                         >
                           {item.certificate_type || 'Certificate'}
                         </Badge>
@@ -458,14 +465,17 @@ export function Certificates() {
 
                       {/* Cert No */}
                       <TableCell className='py-3'>
-                        <div className='inline-flex items-center gap-1 font-mono text-xs bg-muted/60 px-2 py-1 rounded border'>
-                          <span className='truncate max-w-[100px]' title={item.certificate_no}>
+                        <div className='inline-flex items-center gap-1 rounded border bg-muted/60 px-2 py-1 font-mono text-xs'>
+                          <span
+                            className='max-w-[100px] truncate'
+                            title={item.certificate_no}
+                          >
                             {item.certificate_no}
                           </span>
                           <button
                             type='button'
                             onClick={() => handleCopyNo(item)}
-                            className='hover:text-primary transition-colors'
+                            className='transition-colors hover:text-primary'
                             title='Copy ID'
                           >
                             {copiedId === item.id ? (
@@ -478,7 +488,7 @@ export function Certificates() {
                       </TableCell>
 
                       {/* Issue Date */}
-                      <TableCell className='py-3 text-xs text-muted-foreground whitespace-nowrap'>
+                      <TableCell className='py-3 text-xs whitespace-nowrap text-muted-foreground'>
                         {item.issue_date}
                       </TableCell>
 
@@ -489,7 +499,7 @@ export function Certificates() {
                             <Button
                               variant='ghost'
                               size='icon'
-                              className='h-7 w-7 text-indigo-600 hover:text-indigo-700'
+                              className='h-7 w-7 hover:text-indigo-700'
                               onClick={() => setPreviewCert(item)}
                               title='Preview'
                             >
@@ -499,14 +509,16 @@ export function Certificates() {
                               href={certFileUrl}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted'
+                              className='inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground'
                               title='Open File'
                             >
                               <ExternalLink className='h-3.5 w-3.5' />
                             </a>
                           </div>
                         ) : (
-                          <span className='text-xs text-muted-foreground'>No file</span>
+                          <span className='text-xs text-muted-foreground'>
+                            No file
+                          </span>
                         )}
                       </TableCell>
 
@@ -534,7 +546,7 @@ export function Certificates() {
                           <Button
                             variant='ghost'
                             size='icon'
-                            className='h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30'
+                            className='h-8 w-8 text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30'
                             onClick={() => setDeleteCert(item)}
                             title='Delete Certificate'
                           >
@@ -671,7 +683,8 @@ export function Certificates() {
               />
               {editingCert && editingCert.file_name && !formFile && (
                 <p className='text-xs text-muted-foreground'>
-                  Current file: {editingCert.file_name} ({editingCert.file_size || 'Attached'})
+                  Current file: {editingCert.file_name} (
+                  {editingCert.file_size || 'Attached'})
                 </p>
               )}
             </div>
@@ -690,7 +703,9 @@ export function Certificates() {
             {/* Active Toggle */}
             <div className='flex items-center justify-between rounded-lg border p-3'>
               <div>
-                <Label className='font-medium text-sm'>Visible to Candidate</Label>
+                <Label className='text-sm font-medium'>
+                  Visible to Candidate
+                </Label>
                 <p className='text-xs text-muted-foreground'>
                   When active, certificate displays in candidate dashboard.
                 </p>
@@ -752,15 +767,16 @@ export function Certificates() {
                 {previewCert.title}
               </DialogTitle>
               <DialogDescription>
-                Issued to {previewCert.user?.name} ({previewCert.user?.email}) • ID: {previewCert.certificate_no}
+                Issued to {previewCert.user?.name} ({previewCert.user?.email}) •
+                ID: {previewCert.certificate_no}
               </DialogDescription>
             </DialogHeader>
 
-            <div className='py-2 flex items-center justify-center rounded-lg bg-black/10 overflow-hidden'>
+            <div className='flex items-center justify-center overflow-hidden rounded-lg bg-black/10 py-2'>
               {previewCert.file_url && previewCert.file_url.match(/\.pdf$/i) ? (
                 <iframe
                   src={getStorageUrl(previewCert.file_url)}
-                  className='w-full h-[480px] rounded border'
+                  className='h-[480px] w-full rounded border'
                   title={previewCert.title}
                 />
               ) : (
@@ -776,7 +792,7 @@ export function Certificates() {
               )}
             </div>
 
-            <DialogFooter className='flex justify-between sm:justify-between items-center'>
+            <DialogFooter className='flex items-center justify-between sm:justify-between'>
               <p className='text-xs text-muted-foreground'>
                 Date: {previewCert.issue_date} • {previewCert.file_size || ''}
               </p>
@@ -792,7 +808,7 @@ export function Certificates() {
                       target='_blank'
                       rel='noopener noreferrer'
                     >
-                      <Download className='h-3.5 w-3.5 mr-1.5' /> Open File
+                      <Download className='mr-1.5 h-3.5 w-3.5' /> Open File
                     </a>
                   </Button>
                 )}

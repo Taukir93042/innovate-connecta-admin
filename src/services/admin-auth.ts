@@ -45,6 +45,22 @@ export interface ChangeAdminPasswordPayload {
   new_password_confirmation: string
 }
 
+export interface AdminForgotPasswordPayload {
+  email: string
+}
+
+export interface AdminResetPasswordPayload {
+  token: string
+  email: string
+  password: string
+  password_confirmation: string
+}
+
+export interface AdminValidateResetTokenPayload {
+  token: string
+  email: string
+}
+
 export interface AdminBaseResponse {
   status: boolean
   message: string
@@ -110,6 +126,45 @@ export const adminAuthService = {
    */
   async refresh(): Promise<AdminLoginResponse> {
     const response = await apiClient.post<AdminLoginResponse>('/admin/refresh')
+    return response.data
+  },
+
+  /**
+   * Request password reset link for admin
+   */
+  async forgotPassword(
+    payload: AdminForgotPasswordPayload
+  ): Promise<AdminBaseResponse> {
+    const response = await apiClient.post<AdminBaseResponse>(
+      '/admin/forgot-password',
+      payload
+    )
+    return response.data
+  },
+
+  /**
+   * Validate password reset token
+   */
+  async validateResetToken(
+    payload: AdminValidateResetTokenPayload
+  ): Promise<AdminBaseResponse> {
+    const response = await apiClient.post<AdminBaseResponse>(
+      '/admin/validate-reset-token',
+      payload
+    )
+    return response.data
+  },
+
+  /**
+   * Reset admin password using token
+   */
+  async resetPassword(
+    payload: AdminResetPasswordPayload
+  ): Promise<AdminBaseResponse> {
+    const response = await apiClient.post<AdminBaseResponse>(
+      '/admin/reset-password',
+      payload
+    )
     return response.data
   },
 }

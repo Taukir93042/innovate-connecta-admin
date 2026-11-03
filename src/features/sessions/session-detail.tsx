@@ -136,13 +136,7 @@ export function SessionDetail() {
             <div className='flex items-center gap-2 ml-10'>
               <Badge variant='outline'>{categoryName}</Badge>
               
-              {session.is_active ? (
-                <Badge variant='default' className='bg-green-600 hover:bg-green-700'>
-                  Active
-                </Badge>
-              ) : (
-                <Badge variant='secondary'>Inactive</Badge>
-              )}
+
             </div>
           </div>
 

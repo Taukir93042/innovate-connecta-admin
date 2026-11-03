@@ -494,16 +494,7 @@ export function Testimonials() {
                             onCheckedChange={() => handleToggleStatus(item)}
                             aria-label='Toggle visibility'
                           />
-                          <Badge
-                            variant={item.is_active ? 'default' : 'secondary'}
-                            className={
-                              item.is_active
-                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                                : 'text-muted-foreground text-[11px]'
-                            }
-                          >
-                            {item.is_active ? 'Active' : 'Hidden'}
-                          </Badge>
+
                         </div>
                       </TableCell>
 
@@ -696,16 +687,7 @@ export function Testimonials() {
               <DialogHeader>
                 <div className='flex items-center justify-between gap-2 mb-2'>
                   <div className='flex items-center gap-2'>
-                    <Badge
-                      variant={viewItem.is_active ? 'default' : 'secondary'}
-                      className={
-                        viewItem.is_active
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs'
-                          : 'text-xs'
-                      }
-                    >
-                      {viewItem.is_active ? 'Active' : 'Hidden'}
-                    </Badge>
+
                   </div>
                   <div className='flex items-center gap-0.5'>
                     {Array.from({ length: 5 }).map((_, i) => (

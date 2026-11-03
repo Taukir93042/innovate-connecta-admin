@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import {
   Search as SearchIcon,
   Eye,
-  EyeOff,
   Users as UsersIcon,
   Loader2,
   Mail,
@@ -15,8 +14,7 @@ import {
   Download,
   Trash2,
   Key,
-  Copy,
-  Check,
+  ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { adminUserService, type UserItem } from '@/services/admin-users'
@@ -61,11 +59,6 @@ export function Users() {
   // Single delete modal state
   const [deleteItem, setDeleteItem] = useState<UserItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  // Password visibility & copied state
-  const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({})
-  const [copiedId, setCopiedId] = useState<number | null>(null)
-
 
   // PDF Preview modal state
   const [previewPdfUrl, setPreviewPdfUrl] = useState<{
@@ -136,16 +129,7 @@ export function Users() {
     }
   }
 
-  const togglePassword = (id: number) => {
-    setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }))
-  }
 
-  const handleCopyPassword = (id: number, pw: string) => {
-    navigator.clipboard.writeText(pw)
-    setCopiedId(id)
-    toast.success('Password copied to clipboard')
-    setTimeout(() => setCopiedId(null), 2000)
-  }
 
 
   const getUserAvatarUrl = (user: UserItem) => {
@@ -311,43 +295,10 @@ export function Users() {
 
                       {/* Password Column */}
                       <TableCell className='py-3'>
-                        {item.plain_password ? (
-                          <div className='flex items-center gap-1'>
-                            <span className='font-mono text-xs bg-muted/60 px-2 py-0.5 rounded border border-border/50 select-all font-medium text-foreground max-w-[90px] truncate'>
-                              {showPasswords[item.id] ? item.plain_password : '••••••••'}
-                            </span>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='size-6 text-muted-foreground hover:text-foreground shrink-0'
-                              onClick={() => togglePassword(item.id)}
-                              title={showPasswords[item.id] ? 'Hide password' : 'Show password'}
-                            >
-                              {showPasswords[item.id] ? (
-                                <EyeOff className='size-3.5' />
-                              ) : (
-                                <Eye className='size-3.5' />
-                              )}
-                            </Button>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='size-6 text-muted-foreground hover:text-foreground shrink-0'
-                              onClick={() => handleCopyPassword(item.id, item.plain_password!)}
-                              title='Copy password'
-                            >
-                              {copiedId === item.id ? (
-                                <Check className='size-3.5 text-emerald-500' />
-                              ) : (
-                                <Copy className='size-3.5' />
-                              )}
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className='font-mono text-xs text-muted-foreground tracking-wider'>
-                            ••••••••
-                          </span>
-                        )}
+                        <span className='font-mono text-xs text-muted-foreground tracking-wider flex items-center gap-1.5'>
+                          <ShieldCheck className='size-3 text-emerald-500' />
+                          Hashed & Protected
+                        </span>
                       </TableCell>
 
                       {/* Resume Column */}
@@ -470,16 +421,7 @@ export function Users() {
                       {viewItem.name}
                     </h3>
                     <div className='flex items-center gap-2 mt-1'>
-                      <Badge
-                        variant={viewItem.is_active ? 'default' : 'secondary'}
-                        className={
-                          viewItem.is_active
-                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[11px]'
-                            : 'text-muted-foreground text-[11px]'
-                        }
-                      >
-                        {viewItem.is_active ? 'Active Account' : 'Blocked Account'}
-                      </Badge>
+
                     </div>
                   </div>
                 </div>
@@ -512,8 +454,9 @@ export function Users() {
                     <Key className='h-4 w-4 text-muted-foreground mt-0.5 shrink-0' />
                     <div className='min-w-0 flex-1'>
                       <div className='text-xs font-medium text-muted-foreground'>Account Password</div>
-                      <div className='font-mono text-xs font-semibold text-foreground truncate mt-0.5'>
-                        {viewItem.plain_password || 'Encrypted (Stored securely)'}
+                      <div className='font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate mt-0.5 flex items-center gap-1.5'>
+                        <ShieldCheck className='size-3.5' />
+                        Hashed with Bcrypt (One-Way Security)
                       </div>
                     </div>
                   </div>

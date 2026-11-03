@@ -157,16 +157,7 @@ export function RecordedSessionDetailPage() {
                   {session.title}
                 </h1>
                 
-                <Badge
-                  variant='outline'
-                  className={
-                    session.is_active
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
-                      : 'border-muted text-muted-foreground'
-                  }
-                >
-                  {session.is_active ? 'Active' : 'Draft / Inactive'}
-                </Badge>
+
               </div>
               <p className='text-xs text-muted-foreground mt-0.5'>
                 Recorded Course Details &amp; Student Curriculum Overview
