@@ -12,6 +12,7 @@ export interface SessionBookingItem {
   semester: string
   status: 'pending' | 'confirmed' | 'cancelled' | string
   notes?: string | null
+  expectations?: string | null
   ip_address?: string | null
   user_agent?: string | null
   created_at?: string
