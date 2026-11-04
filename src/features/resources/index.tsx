@@ -10,11 +10,15 @@ import {
   FileText,
   Download,
   AlertCircle,
+  FolderPlus,
+  Layers,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   adminResourceService,
+  adminResourceSectionService,
   type ResourceItem,
+  type ResourceSectionItem,
 } from '@/services/admin-resources'
 import {
   adminRecordedSessionService,
@@ -88,9 +92,24 @@ export function ResourcesFeature() {
 
   // Form inputs state
   const [formRecordedSessionId, setFormRecordedSessionId] = useState<string>('')
+  const [formSectionId, setFormSectionId] = useState<string>('none')
   const [formTitle, setFormTitle] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
   const [resourceFile, setResourceFile] = useState<File | null>(null)
+  const [formAvailableSections, setFormAvailableSections] = useState<ResourceSectionItem[]>([])
+  const [loadingFormSections, setLoadingFormSections] = useState(false)
+
+  // Section Management Dialog state
+  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false)
+  const [sectionSessionId, setSectionSessionId] = useState<string>('')
+  const [sections, setSections] = useState<ResourceSectionItem[]>([])
+  const [loadingSections, setLoadingSections] = useState(false)
+  const [newSectionTitle, setNewSectionTitle] = useState('')
+  const [newSectionDesc, setNewSectionDesc] = useState('')
+  const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
+  const [editingSectionTitle, setEditingSectionTitle] = useState('')
+  const [editingSectionDesc, setEditingSectionDesc] = useState('')
+  const [isSavingSection, setIsSavingSection] = useState(false)
 
   const fetchRecordedSessions = async () => {
     try {
@@ -148,43 +167,69 @@ export function ResourcesFeature() {
     fetchResources(newPage, search, selectedSessionId)
   }
 
+  const loadSectionsForSession = async (sessionId: string) => {
+    if (!sessionId || sessionId === 'all') {
+      setFormAvailableSections([])
+      return
+    }
+    try {
+      setLoadingFormSections(true)
+      const res = await adminResourceSectionService.getSections(Number(sessionId))
+      if (res.status && Array.isArray(res.data)) {
+        setFormAvailableSections(res.data)
+      }
+    } catch {
+      setFormAvailableSections([])
+    } finally {
+      setLoadingFormSections(false)
+    }
+  }
+
   const handleOpenCreateModal = () => {
     setEditingItem(null)
-    setFormRecordedSessionId('')
+    setFormRecordedSessionId(selectedSessionId !== 'all' ? selectedSessionId : '')
+    setFormSectionId('none')
     setFormTitle('')
     setFormIsActive(true)
     setResourceFile(null)
+    if (selectedSessionId !== 'all') {
+      loadSectionsForSession(selectedSessionId)
+    } else {
+      setFormAvailableSections([])
+    }
     setIsFormOpen(true)
   }
 
   const handleOpenEditModal = (item: ResourceItem) => {
     setEditingItem(item)
-    setFormRecordedSessionId(item.recorded_session_id ? String(item.recorded_session_id) : '')
+    const recId = item.recorded_session_id ? String(item.recorded_session_id) : ''
+    setFormRecordedSessionId(recId)
+    setFormSectionId(item.resource_section_id ? String(item.resource_section_id) : 'none')
     setFormTitle(item.title)
     setFormIsActive(item.is_active)
     setResourceFile(null)
     setIsFormOpen(true)
-  }
-
-  // When session is selected, auto-fill title with hyphen
-  const handleSessionSelect = (sessionId: string) => {
-    setFormRecordedSessionId(sessionId)
-    if (sessionId) {
-      const selectedSession = recordedSessions.find((s) => String(s.id) === sessionId)
-      if (selectedSession && (!formTitle || formTitle.trim() === '')) {
-        setFormTitle(`${selectedSession.title} - Session PDF Notes`)
-      }
+    if (recId) {
+      loadSectionsForSession(recId)
+    } else {
+      setFormAvailableSections([])
     }
   }
 
-  // Find if currently selected session already has a resource attached
-  const existingResourceForSession = formRecordedSessionId
-    ? resources.find(
-        (r) =>
-          String(r.recorded_session_id) === formRecordedSessionId &&
-          (!editingItem || editingItem.id !== r.id)
-      )
-    : null
+  // When session is selected, load sections and propose a title
+  const handleSessionSelect = (sessionId: string) => {
+    setFormRecordedSessionId(sessionId)
+    setFormSectionId('none')
+    if (sessionId) {
+      loadSectionsForSession(sessionId)
+      const selectedSession = recordedSessions.find((s) => String(s.id) === sessionId)
+      if (selectedSession && (!formTitle || formTitle.trim() === '')) {
+        setFormTitle(`${selectedSession.title} - PDF Notes`)
+      }
+    } else {
+      setFormAvailableSections([])
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -252,6 +297,9 @@ export function ResourcesFeature() {
       setIsSubmitting(true)
       const formData = new FormData()
       formData.append('recorded_session_id', formRecordedSessionId)
+      if (formSectionId && formSectionId !== 'none') {
+        formData.append('resource_section_id', formSectionId)
+      }
       formData.append('title', formTitle.trim())
       formData.append('category', 'PDF Notes')
       formData.append('is_active', formIsActive ? '1' : '0')
@@ -264,14 +312,14 @@ export function ResourcesFeature() {
         formData.append('_method', 'PUT')
         const res = await adminResourceService.updateResource(editingItem.id, formData)
         if (res.status) {
-          toast.success(res.message || 'Session PDF updated successfully')
+          toast.success(res.message || 'PDF updated successfully')
           setIsFormOpen(false)
           fetchResources()
         }
       } else {
         const res = await adminResourceService.createResource(formData)
         if (res.status) {
-          toast.success(res.message || 'Session PDF uploaded successfully')
+          toast.success(res.message || 'PDF uploaded successfully')
           setIsFormOpen(false)
           fetchResources()
         }
@@ -334,6 +382,116 @@ export function ResourcesFeature() {
     }
   }
 
+  // Section Management Handlers
+  const fetchSectionsForManage = async (sessionId: string) => {
+    if (!sessionId || sessionId === 'all') {
+      setSections([])
+      return
+    }
+    try {
+      setLoadingSections(true)
+      const res = await adminResourceSectionService.getSections(Number(sessionId))
+      if (res.status && Array.isArray(res.data)) {
+        setSections(res.data)
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to fetch sections'))
+    } finally {
+      setLoadingSections(false)
+    }
+  }
+
+  const handleOpenManageSections = (sessionId?: string) => {
+    const target =
+      sessionId ||
+      (selectedSessionId !== 'all' ? selectedSessionId : '') ||
+      (recordedSessions.length > 0 ? String(recordedSessions[0].id) : '')
+    setSectionSessionId(target)
+    setIsSectionModalOpen(true)
+    if (target) {
+      fetchSectionsForManage(target)
+    }
+  }
+
+  const handleCreateSection = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!sectionSessionId) {
+      toast.error('Please select a recorded session first.')
+      return
+    }
+    if (!newSectionTitle.trim()) {
+      toast.error('Section title is required.')
+      return
+    }
+    try {
+      setIsSavingSection(true)
+      const res = await adminResourceSectionService.createSection({
+        recorded_session_id: Number(sectionSessionId),
+        title: newSectionTitle.trim(),
+        description: newSectionDesc.trim() || undefined,
+        sort_order: sections.length,
+      })
+      if (res.status) {
+        toast.success('Section heading created!')
+        setNewSectionTitle('')
+        setNewSectionDesc('')
+        fetchSectionsForManage(sectionSessionId)
+        if (formRecordedSessionId === sectionSessionId) {
+          loadSectionsForSession(sectionSessionId)
+        }
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to create section'))
+    } finally {
+      setIsSavingSection(false)
+    }
+  }
+
+  const handleUpdateSection = async (sectionId: number) => {
+    if (!editingSectionTitle.trim()) {
+      toast.error('Section title cannot be empty.')
+      return
+    }
+    try {
+      setIsSavingSection(true)
+      const res = await adminResourceSectionService.updateSection(sectionId, {
+        title: editingSectionTitle.trim(),
+        description: editingSectionDesc.trim() || undefined,
+      })
+      if (res.status) {
+        toast.success('Section updated successfully!')
+        setEditingSectionId(null)
+        fetchSectionsForManage(sectionSessionId)
+        if (formRecordedSessionId === sectionSessionId) {
+          loadSectionsForSession(sectionSessionId)
+        }
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to update section'))
+    } finally {
+      setIsSavingSection(false)
+    }
+  }
+
+  const handleDeleteSection = async (sectionId: number) => {
+    if (!confirm('Delete this section heading? PDF files under it will NOT be deleted; they will be kept as general resources.')) {
+      return
+    }
+    try {
+      const res = await adminResourceSectionService.deleteSection(sectionId)
+      if (res.status) {
+        toast.success(res.message || 'Section deleted.')
+        fetchSectionsForManage(sectionSessionId)
+        fetchResources(page, search, selectedSessionId)
+        if (formRecordedSessionId === sectionSessionId) {
+          loadSectionsForSession(sectionSessionId)
+        }
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to delete section'))
+    }
+  }
+
   return (
     <>
       <Header fixed>
@@ -352,7 +510,7 @@ export function ResourcesFeature() {
               <FolderOpen className='h-6 w-6 text-primary' /> Session PDF Management
             </h1>
             <p className='text-sm text-muted-foreground'>
-              Upload 1 PDF notes file (max 20 MB) per recorded session. Only enrolled students can view &amp; download it.
+              Manage resource section headings and multiple PDF files per recorded session.
             </p>
           </div>
 
@@ -369,9 +527,18 @@ export function ResourcesFeature() {
               </Button>
             )}
 
+            <Button
+              variant='outline'
+              onClick={() => handleOpenManageSections()}
+              className='gap-2 shadow-sm'
+            >
+              <Layers className='h-4 w-4 text-primary' />
+              Manage Sections
+            </Button>
+
             <Button onClick={handleOpenCreateModal} className='gap-2 shadow-sm'>
               <Plus className='h-4 w-4' />
-              Upload Session PDF
+              Upload PDF File
             </Button>
           </div>
         </div>
@@ -433,6 +600,7 @@ export function ResourcesFeature() {
                   />
                 </TableHead>
                 <TableHead className='min-w-[260px]'>Resource Title &amp; PDF File</TableHead>
+                <TableHead>Section / Heading</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead className='text-center'>Status</TableHead>
                 <TableHead className='text-right'>Actions</TableHead>
@@ -441,7 +609,7 @@ export function ResourcesFeature() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className='h-36 text-center'>
+                  <TableCell colSpan={6} className='h-36 text-center'>
                     <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
                       <Loader2 className='h-6 w-6 animate-spin text-primary' />
                       <span>Loading PDF resources...</span>
@@ -450,12 +618,12 @@ export function ResourcesFeature() {
                 </TableRow>
               ) : resources.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className='h-40 text-center'>
+                  <TableCell colSpan={6} className='h-40 text-center'>
                     <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
                       <FolderOpen className='h-8 w-8 text-muted-foreground/50' />
                       <p className='font-medium text-foreground'>No session PDFs found</p>
                       <p className='text-xs text-muted-foreground'>
-                        Upload your first session PDF notes to make it available for enrolled students.
+                        Upload your PDF notes to make them available for enrolled students.
                       </p>
                     </div>
                   </TableCell>
@@ -482,16 +650,38 @@ export function ResourcesFeature() {
                       {/* Title & PDF File Name */}
                       <TableCell>
                         <div className='flex items-start gap-3'>
-                          <div className='p-2 rounded-lg bg-red-500/10 text-red-500 mt-0.5'>
+                          <div className='p-2 rounded-lg bg-red-500/10 text-red-500 mt-0.5 flex-shrink-0'>
                             <FileText className='h-5 w-5' />
                           </div>
                           <div>
                             <p className='font-semibold text-foreground text-sm line-clamp-1'>
                               {res.title}
                             </p>
-                            
+                            <div className='flex items-center gap-2 mt-0.5'>
+                              {res.recorded_session && (
+                                <span className='text-xs text-muted-foreground'>
+                                  {res.recorded_session.title}
+                                </span>
+                              )}
+                              <span className='text-[11px] text-muted-foreground font-mono'>
+                                • {res.file_name}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                      </TableCell>
+
+                      {/* Section Heading */}
+                      <TableCell>
+                        {res.resource_section ? (
+                          <Badge variant='secondary' className='text-xs py-0.5 px-2 font-normal bg-purple-500/10 text-purple-400 border border-purple-500/20'>
+                            {res.resource_section.title}
+                          </Badge>
+                        ) : (
+                          <Badge variant='outline' className='text-xs py-0.5 px-2 font-normal text-muted-foreground'>
+                            General
+                          </Badge>
+                        )}
                       </TableCell>
 
                       {/* File Size */}
@@ -591,10 +781,10 @@ export function ResourcesFeature() {
             <form onSubmit={handleSubmitForm}>
               <DialogHeader>
                 <DialogTitle>
-                  {editingItem ? 'Edit Session PDF' : 'Upload Session PDF'}
+                  {editingItem ? 'Edit Resource PDF' : 'Upload Resource PDF'}
                 </DialogTitle>
                 <DialogDescription>
-                  Upload or replace the PDF notes for a recorded session (1 session = 1 PDF, max 20 MB).
+                  Upload a PDF resource (max 20 MB) and optionally assign it to an accordion section heading.
                 </DialogDescription>
               </DialogHeader>
 
@@ -620,35 +810,64 @@ export function ResourcesFeature() {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  {existingResourceForSession && (
-                    <div className='flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500'>
-                      <AlertCircle className='h-4 w-4 flex-shrink-0' />
-                      <span>
-                        This session already has a PDF attached (<strong>{existingResourceForSession.file_name}</strong>). Uploading will replace it.
-                      </span>
-                    </div>
-                  )}
                 </div>
 
-                {/* 2. Resource Title */}
+                {/* 2. Select Resource Section Heading (Optional) */}
+                <div className='grid gap-2'>
+                  <div className='flex items-center justify-between'>
+                    <Label htmlFor='section' className='font-semibold'>
+                      Section Heading
+                    </Label>
+                    {formRecordedSessionId && (
+                      <button
+                        type='button'
+                        onClick={() => {
+                          setIsFormOpen(false)
+                          handleOpenManageSections(formRecordedSessionId)
+                        }}
+                        className='text-xs text-primary hover:underline font-medium'
+                      >
+                        + Manage Sections
+                      </button>
+                    )}
+                  </div>
+                  <Select
+                    value={formSectionId}
+                    onValueChange={setFormSectionId}
+                    disabled={!formRecordedSessionId || loadingFormSections}
+                  >
+                    <SelectTrigger id='section'>
+                      <SelectValue placeholder={loadingFormSections ? 'Loading sections...' : 'General (No Section)'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='none'>General / No Section</SelectItem>
+                      {formAvailableSections.map((sec) => (
+                        <SelectItem key={sec.id} value={String(sec.id)}>
+                          {sec.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className='text-[11px] text-muted-foreground'>
+                    Organizes this PDF under an accordion group on the student portal.
+                  </p>
+                </div>
+
+                {/* 3. Resource Title */}
                 <div className='grid gap-2'>
                   <Label htmlFor='title' className='font-semibold'>
-                    Resource Title <span className='text-destructive'>*</span>
+                    PDF Title <span className='text-destructive'>*</span>
                   </Label>
                   <Input
                     id='title'
-                    placeholder='e.g. LinkedIn Growth &amp; Personal Branding Playbook - Session PDF Notes'
+                    placeholder='e.g. Course Introduction & Notes'
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     required
                   />
-                  <p className='text-[11px] text-muted-foreground'>
-                    Auto-formatted with hyphen (-) for clear separation.
-                  </p>
                 </div>
 
-                {/* 3. File Upload (PDF only, Max 20MB) */}
+                {/* 4. File Upload (PDF only, Max 20MB) */}
                 <div className='grid gap-2'>
                   <div className='flex items-center justify-between'>
                     <Label htmlFor='file' className='font-semibold'>
@@ -672,7 +891,7 @@ export function ResourcesFeature() {
                   )}
                 </div>
 
-                {/* 4. Active Switch */}
+                {/* 5. Active Switch */}
                 <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/20'>
                   <div>
                     <Label className='text-xs font-semibold'>Visible to Enrolled Students</Label>
@@ -705,6 +924,189 @@ export function ResourcesFeature() {
           </DialogContent>
         </Dialog>
 
+        {/* Manage Resource Sections Modal */}
+        <Dialog open={isSectionModalOpen} onOpenChange={setIsSectionModalOpen}>
+          <DialogContent className='sm:max-w-[620px]'>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <Layers className='h-5 w-5 text-primary' />
+                <span>Manage Course Resource Sections</span>
+              </DialogTitle>
+              <DialogDescription>
+                Create and organize accordion headings (e.g. &quot;01. HTML Basics&quot;) for this masterclass.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className='space-y-4 py-2'>
+              {/* Select Session */}
+              <div className='grid gap-2'>
+                <Label className='font-semibold text-xs'>Recorded Session</Label>
+                <Select
+                  value={sectionSessionId}
+                  onValueChange={(val) => {
+                    setSectionSessionId(val)
+                    fetchSectionsForManage(val)
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder='Select Recorded Session' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recordedSessions.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Add New Section Form */}
+              <form onSubmit={handleCreateSection} className='p-3.5 rounded-lg border bg-muted/20 space-y-3'>
+                <p className='text-xs font-semibold text-foreground flex items-center gap-1.5'>
+                  <Plus className='h-3.5 w-3.5 text-primary' /> Add New Section Heading
+                </p>
+                <div className='grid gap-2'>
+                  <Input
+                    placeholder='Section Title (e.g. 01. Course Notes & Study Material)'
+                    value={newSectionTitle}
+                    onChange={(e) => setNewSectionTitle(e.target.value)}
+                    required
+                  />
+                  <Input
+                    placeholder='Optional short description (e.g. Comprehensive guide & quick revision)'
+                    value={newSectionDesc}
+                    onChange={(e) => setNewSectionDesc(e.target.value)}
+                  />
+                </div>
+                <div className='flex justify-end'>
+                  <Button
+                    type='submit'
+                    size='sm'
+                    disabled={isSavingSection || !sectionSessionId || !newSectionTitle.trim()}
+                    className='gap-1.5'
+                  >
+                    {isSavingSection && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
+                    Save Section
+                  </Button>
+                </div>
+              </form>
+
+              {/* Existing Sections List */}
+              <div className='space-y-2'>
+                <Label className='font-semibold text-xs'>
+                  Existing Sections ({sections.length})
+                </Label>
+                {loadingSections ? (
+                  <div className='text-center py-6 text-muted-foreground text-xs flex items-center justify-center gap-2'>
+                    <Loader2 className='h-4 w-4 animate-spin text-primary' /> Loading sections...
+                  </div>
+                ) : sections.length === 0 ? (
+                  <div className='text-center py-6 text-muted-foreground text-xs border rounded-lg border-dashed'>
+                    No sections added for this session yet. Create your first heading above.
+                  </div>
+                ) : (
+                  <div className='space-y-2 max-h-[280px] overflow-y-auto pr-1'>
+                    {sections.map((sec, idx) => (
+                      <div
+                        key={sec.id}
+                        className='p-3 rounded-lg border bg-card flex items-center justify-between gap-3 text-sm'
+                      >
+                        {editingSectionId === sec.id ? (
+                          <div className='flex-1 space-y-2'>
+                            <Input
+                              value={editingSectionTitle}
+                              onChange={(e) => setEditingSectionTitle(e.target.value)}
+                              placeholder='Section title'
+                              className='h-8 text-xs'
+                            />
+                            <Input
+                              value={editingSectionDesc}
+                              onChange={(e) => setEditingSectionDesc(e.target.value)}
+                              placeholder='Optional description'
+                              className='h-8 text-xs'
+                            />
+                            <div className='flex items-center gap-2 justify-end'>
+                              <Button
+                                size='sm'
+                                variant='ghost'
+                                onClick={() => setEditingSectionId(null)}
+                                className='h-7 text-xs'
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size='sm'
+                                onClick={() => handleUpdateSection(sec.id)}
+                                disabled={isSavingSection}
+                                className='h-7 text-xs'
+                              >
+                                Save
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className='flex items-center gap-2.5 min-w-0'>
+                              <span className='font-mono text-xs text-muted-foreground font-semibold'>
+                                {String(idx + 1).padStart(2, '0')}.
+                              </span>
+                              <div className='min-w-0'>
+                                <p className='font-medium text-foreground text-xs truncate'>
+                                  {sec.title}
+                                </p>
+                                {sec.description && (
+                                  <p className='text-[11px] text-muted-foreground truncate'>
+                                    {sec.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge variant='outline' className='text-[10px] py-0 px-1.5 font-mono text-muted-foreground ml-1'>
+                                {sec.total_files || 0} PDFs
+                              </Badge>
+                            </div>
+
+                            <div className='flex items-center gap-1 flex-shrink-0'>
+                              <Button
+                                size='icon'
+                                variant='ghost'
+                                className='h-7 w-7'
+                                onClick={() => {
+                                  setEditingSectionId(sec.id)
+                                  setEditingSectionTitle(sec.title)
+                                  setEditingSectionDesc(sec.description || '')
+                                }}
+                                title='Edit section'
+                              >
+                                <Edit2 className='h-3.5 w-3.5' />
+                              </Button>
+                              <Button
+                                size='icon'
+                                variant='ghost'
+                                className='h-7 w-7 text-destructive hover:text-destructive'
+                                onClick={() => handleDeleteSection(sec.id)}
+                                title='Delete section'
+                              >
+                                <Trash2 className='h-3.5 w-3.5' />
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant='outline' onClick={() => setIsSectionModalOpen(false)}>
+                Done
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* View Resource Details Modal */}
         <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
           <DialogContent className='sm:max-w-[460px]'>
@@ -728,6 +1130,15 @@ export function ResourcesFeature() {
                     {viewItem.recorded_session?.title || viewItem.session?.title || 'None'}
                   </p>
                 </div>
+
+                {viewItem.resource_section && (
+                  <div>
+                    <p className='text-xs text-muted-foreground'>Section Heading</p>
+                    <p className='font-medium mt-0.5 text-purple-400'>
+                      {viewItem.resource_section.title}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <p className='text-xs text-muted-foreground'>File Name &amp; Size</p>

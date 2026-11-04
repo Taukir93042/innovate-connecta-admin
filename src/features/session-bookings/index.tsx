@@ -592,10 +592,21 @@ export function SessionBookings() {
                   </div>
                   <div>
                     <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
-                      Semester
+                      Year / Semester
                     </span>
                     <p className='text-xs font-medium'>{viewItem.semester}</p>
                   </div>
+
+                  {(viewItem.expectations || viewItem.notes) && (
+                    <div className='col-span-2 pt-2 border-t'>
+                      <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                        Career Goals &amp; Expectations
+                      </span>
+                      <p className='text-xs whitespace-pre-wrap rounded-md bg-background/60 p-2.5 border text-foreground'>
+                        {viewItem.expectations || viewItem.notes}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Change Status in Modal */}
@@ -675,3 +686,4 @@ export function SessionBookings() {
     </>
   )
 }
+

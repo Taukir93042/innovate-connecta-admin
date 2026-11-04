@@ -4,6 +4,7 @@ export interface ResourceItem {
   id: number
   title: string
   recorded_session_id?: number | null
+  resource_section_id?: number | null
   session_id?: number | null
   category: string
   file_path: string
@@ -21,6 +22,10 @@ export interface ResourceItem {
     id: number
     title: string
     slug: string
+  } | null
+  resource_section?: {
+    id: number
+    title: string
   } | null
   session?: {
     id: number
@@ -115,6 +120,78 @@ export const adminResourceService = {
       message: string
       data: { id: number; is_active: boolean }
     }>(`/admin/resources/${id}/toggle-status`)
+    return res.data
+  },
+}
+
+
+export interface ResourceSectionItem {
+  id: number
+  recorded_session_id: number
+  title: string
+  description?: string | null
+  sort_order: number
+  is_active: boolean
+  total_files?: number
+  created_at?: string
+  updated_at?: string
+  resources?: ResourceItem[]
+  recorded_session?: {
+    id: number
+    title: string
+    slug: string
+  } | null
+}
+
+export const adminResourceSectionService = {
+  async getSections(recordedSessionId: number): Promise<{
+    status: boolean
+    message: string
+    data: ResourceSectionItem[]
+    session: { id: number; title: string; slug: string }
+  }> {
+    const res = await apiClient.get(`/admin/recorded-sessions/${recordedSessionId}/resource-sections`)
+    return res.data
+  },
+
+  async createSection(data: {
+    recorded_session_id: number
+    title: string
+    description?: string
+    sort_order?: number
+    is_active?: boolean
+  }): Promise<{ status: boolean; message: string; data: ResourceSectionItem }> {
+    const res = await apiClient.post('/admin/resource-sections', data)
+    return res.data
+  },
+
+  async updateSection(
+    id: number,
+    data: {
+      title?: string
+      description?: string
+      sort_order?: number
+      is_active?: boolean
+    }
+  ): Promise<{ status: boolean; message: string; data: ResourceSectionItem }> {
+    const res = await apiClient.put(`/admin/resource-sections/${id}`, data)
+    return res.data
+  },
+
+  async deleteSection(id: number): Promise<{ status: boolean; message: string }> {
+    const res = await apiClient.delete(`/admin/resource-sections/${id}`)
+    return res.data
+  },
+
+  async toggleSectionStatus(
+    id: number
+  ): Promise<{ status: boolean; message: string; data: { id: number; is_active: boolean } }> {
+    const res = await apiClient.patch(`/admin/resource-sections/${id}/toggle-status`)
+    return res.data
+  },
+
+  async reorderSections(ids: number[]): Promise<{ status: boolean; message: string }> {
+    const res = await apiClient.post('/admin/resource-sections/reorder', { ids })
     return res.data
   },
 }
