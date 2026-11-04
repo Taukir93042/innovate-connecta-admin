@@ -43,6 +43,7 @@ export function ForgotPasswordForm({
     try {
       const response = await adminAuthService.forgotPassword({
         email: data.email.trim(),
+        admin_url: typeof window !== 'undefined' ? window.location.origin : undefined,
       })
 
       setIsSuccess(true)

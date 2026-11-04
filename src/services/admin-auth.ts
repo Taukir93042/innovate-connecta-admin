@@ -47,6 +47,7 @@ export interface ChangeAdminPasswordPayload {
 
 export interface AdminForgotPasswordPayload {
   email: string
+  admin_url?: string
 }
 
 export interface AdminResetPasswordPayload {
