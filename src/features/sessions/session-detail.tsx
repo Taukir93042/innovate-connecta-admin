@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import {
+  adminSessionService,
+  getCategoryName,
+  type SessionItem,
+} from '@/services/admin-sessions'
+import {
   ArrowLeft,
   Edit2,
   Layers,
@@ -8,23 +13,14 @@ import {
   Loader2,
   Trash2,
   UserCircle,
+  Video,
+  ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  adminSessionService,
-  getCategoryName,
-  type SessionItem,
-} from '@/services/admin-sessions'
 import { getApiErrorMessage } from '@/lib/api-client'
 import { getStorageUrl } from '@/lib/utils'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -32,11 +28,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 
 export function SessionDetail() {
   const navigate = useNavigate()
-  const params = useParams({ strict: false }) as { sessionId?: string; id?: string }
+  const params = useParams({ strict: false }) as {
+    sessionId?: string
+    id?: string
+  }
   const sessionId = params.sessionId || params.id
 
   const [session, setSession] = useState<SessionItem | null>(null)
@@ -71,7 +76,9 @@ export function SessionDetail() {
     if (!session) return
     try {
       await adminSessionService.toggleStatus(session.id)
-      setSession((prev) => (prev ? { ...prev, is_active: !prev.is_active } : null))
+      setSession((prev) =>
+        prev ? { ...prev, is_active: !prev.is_active } : null
+      )
       toast.success('Status updated successfully')
     } catch (err) {
       toast.error(getApiErrorMessage(err))
@@ -131,12 +138,12 @@ export function SessionDetail() {
               >
                 <ArrowLeft className='h-4 w-4' />
               </Button>
-              <h1 className='text-2xl font-bold tracking-tight'>{session.title}</h1>
+              <h1 className='text-2xl font-bold tracking-tight'>
+                {session.title}
+              </h1>
             </div>
-            <div className='flex items-center gap-2 ml-10'>
+            <div className='ml-10 flex items-center gap-2'>
               <Badge variant='outline'>{categoryName}</Badge>
-              
-
             </div>
           </div>
 
@@ -144,7 +151,12 @@ export function SessionDetail() {
             <Button
               variant='outline'
               size='sm'
-              onClick={() => navigate({ to: '/live-sessions/create', search: { id: session.id } as any })}
+              onClick={() =>
+                navigate({
+                  to: '/live-sessions/create',
+                  search: { id: session.id } as any,
+                })
+              }
               className='gap-1.5'
             >
               <Edit2 className='h-4 w-4' /> Edit
@@ -160,25 +172,29 @@ export function SessionDetail() {
           </div>
         </div>
 
-        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
+        <div className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
           {/* Main Content Column (8 cols) */}
-          <div className='lg:col-span-8 space-y-6'>
+          <div className='space-y-6 lg:col-span-8'>
             {/* Section 1: Overview & Introduction */}
             <Card>
               <CardHeader>
                 <CardTitle className='text-base font-semibold'>
                   Section 1: Overview &amp; Introduction
                 </CardTitle>
-                <CardDescription>Comprehensive summary and description of the session.</CardDescription>
+                <CardDescription>
+                  Comprehensive summary and description of the session.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {/<[a-z][sS]*>/i.test(session.section_one_content) ? (
                   <div
-                    className='prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_th]:border [&_th]:p-2 [&_td]:border [&_td]:p-2 [&_a]:text-primary [&_a]:underline'
-                    dangerouslySetInnerHTML={{ __html: session.section_one_content }}
+                    className='prose prose-sm dark:prose-invert max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-6'
+                    dangerouslySetInnerHTML={{
+                      __html: session.section_one_content,
+                    }}
                   />
                 ) : (
-                  <div className='text-sm text-foreground/90 whitespace-pre-line leading-relaxed'>
+                  <div className='text-sm leading-relaxed whitespace-pre-line text-foreground/90'>
                     {session.section_one_content}
                   </div>
                 )}
@@ -193,17 +209,20 @@ export function SessionDetail() {
                     Section 2: Curriculum, Key Deliverables &amp; Outcomes
                   </CardTitle>
                   <CardDescription>
-                    Detailed agenda breakdown, deliverables, certifications, and takeaways.
+                    Detailed agenda breakdown, deliverables, certifications, and
+                    takeaways.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {/<[a-z][sS]*>/i.test(session.section_two_content) ? (
                     <div
-                      className='prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_th]:border [&_th]:p-2 [&_td]:border [&_td]:p-2 [&_a]:text-primary [&_a]:underline'
-                      dangerouslySetInnerHTML={{ __html: session.section_two_content }}
+                      className='prose prose-sm dark:prose-invert max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-6'
+                      dangerouslySetInnerHTML={{
+                        __html: session.section_two_content,
+                      }}
                     />
                   ) : (
-                    <div className='text-sm text-foreground/90 whitespace-pre-line leading-relaxed'>
+                    <div className='text-sm leading-relaxed whitespace-pre-line text-foreground/90'>
                       {session.section_two_content}
                     </div>
                   )}
@@ -211,27 +230,26 @@ export function SessionDetail() {
               </Card>
             )}
 
-
-
             {/* Highlights & Info Cards */}
             {infoCards.length > 0 && (
               <Card>
                 <CardHeader className='pb-3'>
-                  <CardTitle className='text-base font-semibold flex items-center gap-2'>
-                    <Layers className='h-4 w-4 text-primary' /> Key Highlights &amp; Details
+                  <CardTitle className='flex items-center gap-2 text-base font-semibold'>
+                    <Layers className='h-4 w-4 text-primary' /> Key Highlights
+                    &amp; Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
+                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3'>
                     {infoCards.map((card: any, idx: number) => (
                       <div
                         key={idx}
-                        className='rounded-lg border bg-muted/30 p-3 flex flex-col justify-center'
+                        className='flex flex-col justify-center rounded-lg border bg-muted/30 p-3'
                       >
-                        <span className='text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                        <span className='text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
                           {card.title || card.key}
                         </span>
-                        <span className='text-sm font-semibold text-foreground mt-1'>
+                        <span className='mt-1 text-sm font-semibold text-foreground'>
                           {card.description || card.value}
                         </span>
                       </div>
@@ -243,14 +261,16 @@ export function SessionDetail() {
           </div>
 
           {/* Sidebar / Info Column (4 cols) */}
-          <div className='lg:col-span-4 flex flex-col gap-6'>
+          <div className='flex flex-col gap-6 lg:col-span-4'>
             {/* Banner Cover Image */}
             <Card className='overflow-hidden'>
               <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-semibold'>Session Banner</CardTitle>
+                <CardTitle className='text-sm font-semibold'>
+                  Session Banner
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className='relative aspect-video w-full overflow-hidden rounded-lg border bg-muted flex items-center justify-center shadow-xs'>
+                <div className='relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border bg-muted shadow-xs'>
                   {coverImage && !imageError ? (
                     <img
                       src={coverImage}
@@ -268,71 +288,111 @@ export function SessionDetail() {
               </CardContent>
             </Card>
 
-            {/* Assigned Instructor (Right Sidebar) */}
-            {(session.instructor || session.instructor_name) && (() => {
-              const instName = session.instructor?.name || session.instructor_name || ''
-              const instRole = session.instructor?.designation || session.instructor_designation || ''
-              const instExp = session.instructor?.experience || session.instructor_experience || ''
-              const instBio = session.instructor?.bio || session.instructor_bio || ''
-              const instImg = session.instructor?.image_url || session.instructor_image_url || null
+            {/* Live Stream / Video Link */}
+            {session.video_url && (
+              <Card>
+                <CardHeader className='pb-2'>
+                  <CardTitle className='flex items-center gap-2 text-sm font-semibold'>
+                    <Video className='h-4 w-4 text-primary' /> Live Stream /
+                    Video
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-3'>
+                  <p className='rounded bg-muted/50 p-2 font-mono text-xs break-all text-muted-foreground'>
+                    {session.video_url}
+                  </p>
+                  <Button
+                    size='sm'
+                    className='w-full gap-2'
+                    variant='outline'
+                    onClick={() => window.open(session.video_url!, '_blank')}
+                  >
+                    <ExternalLink className='h-3.5 w-3.5' /> Open Stream / Video
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
-              return (
-                <Card>
-                  <CardHeader className='pb-2'>
-                    <CardTitle className='text-sm font-semibold flex items-center gap-1.5'>
-                      <UserCircle className='h-4 w-4 text-primary' /> Assigned Instructor
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className='space-y-3'>
-                    <div className='flex items-center gap-3'>
-                      <div className='size-11 rounded-full overflow-hidden border bg-muted flex items-center justify-center shrink-0 text-primary font-bold text-xs shadow-xs'>
-                        {instImg ? (
-                          <img
-                            src={getStorageUrl(instImg)}
-                            alt={instName || 'Instructor'}
-                            className='size-full object-cover'
-                          />
-                        ) : (
-                          instName
-                            ? instName
-                                .split(' ')
-                                .map((n: string) => n[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)
-                            : 'IN'
-                        )}
-                      </div>
-                      <div className='space-y-0.5 min-w-0'>
-                        <div className='text-xs font-bold text-foreground truncate'>
-                          {instName || 'Instructor'}
+            {/* Assigned Instructor (Right Sidebar) */}
+            {(session.instructor || session.instructor_name) &&
+              (() => {
+                const instName =
+                  session.instructor?.name || session.instructor_name || ''
+                const instRole =
+                  session.instructor?.designation ||
+                  session.instructor_designation ||
+                  ''
+                const instExp =
+                  session.instructor?.experience ||
+                  session.instructor_experience ||
+                  ''
+                const instBio =
+                  session.instructor?.bio || session.instructor_bio || ''
+                const instImg =
+                  session.instructor?.image_url ||
+                  session.instructor_image_url ||
+                  null
+
+                return (
+                  <Card>
+                    <CardHeader className='pb-2'>
+                      <CardTitle className='flex items-center gap-1.5 text-sm font-semibold'>
+                        <UserCircle className='h-4 w-4 text-primary' /> Assigned
+                        Instructor
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className='space-y-3'>
+                      <div className='flex items-center gap-3'>
+                        <div className='flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-xs font-bold text-primary shadow-xs'>
+                          {instImg ? (
+                            <img
+                              src={getStorageUrl(instImg)}
+                              alt={instName || 'Instructor'}
+                              className='size-full object-cover'
+                            />
+                          ) : instName ? (
+                            instName
+                              .split(' ')
+                              .map((n: string) => n[0])
+                              .join('')
+                              .toUpperCase()
+                              .slice(0, 2)
+                          ) : (
+                            'IN'
+                          )}
                         </div>
-                        {instRole && (
-                          <div className='text-[11px] font-medium text-primary truncate'>
-                            {instRole}
+                        <div className='min-w-0 space-y-0.5'>
+                          <div className='truncate text-xs font-bold text-foreground'>
+                            {instName || 'Instructor'}
                           </div>
-                        )}
-                        {instExp && (
-                          <div className='text-[10px] text-muted-foreground truncate'>
-                            {instExp}
-                          </div>
-                        )}
+                          {instRole && (
+                            <div className='truncate text-[11px] font-medium text-primary'>
+                              {instRole}
+                            </div>
+                          )}
+                          {instExp && (
+                            <div className='truncate text-[10px] text-muted-foreground'>
+                              {instExp}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {instBio && (
-                      <p className='text-xs text-foreground/80 line-clamp-3 leading-relaxed border-t pt-2'>
-                        {instBio}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })()}
+                      {instBio && (
+                        <p className='line-clamp-3 border-t pt-2 text-xs leading-relaxed text-foreground/80'>
+                          {instBio}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })()}
 
             {/* Status & Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle className='text-sm font-semibold'>Visibility &amp; Settings</CardTitle>
+                <CardTitle className='text-sm font-semibold'>
+                  Visibility &amp; Settings
+                </CardTitle>
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='flex items-center justify-between rounded-lg border p-3'>
@@ -348,24 +408,31 @@ export function SessionDetail() {
                   />
                 </div>
 
-                <div className='space-y-2 pt-2 border-t text-xs text-muted-foreground'>
+                <div className='space-y-2 border-t pt-2 text-xs text-muted-foreground'>
                   <div className='flex items-center justify-between'>
                     <span>Category:</span>
-                    <span className='font-semibold text-foreground'>{categoryName}</span>
+                    <span className='font-semibold text-foreground'>
+                      {categoryName}
+                    </span>
                   </div>
                   <div className='flex items-center justify-between'>
                     <span>Slug:</span>
-                    <span className='font-mono text-foreground'>/{session.slug}</span>
+                    <span className='font-mono text-foreground'>
+                      /{session.slug}
+                    </span>
                   </div>
                   {session.created_at && (
                     <div className='flex items-center justify-between'>
                       <span>Created At:</span>
                       <span className='text-foreground'>
-                        {new Date(session.created_at).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {new Date(session.created_at).toLocaleDateString(
+                          undefined,
+                          {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          }
+                        )}
                       </span>
                     </div>
                   )}

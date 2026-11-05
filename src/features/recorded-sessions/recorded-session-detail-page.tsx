@@ -10,6 +10,7 @@ import {
   Video,
   Clock,
   BookOpen,
+  FolderOpen,
   FileText,
   Download,
   Eye,
@@ -252,6 +253,39 @@ export function RecordedSessionDetailPage() {
                       <span className='truncate'>{session.instructor?.name || 'Assigned Expert'}</span>
                     </span>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Multi-Section Curriculum & PDFs Manager Shortcut */}
+            <Card className='border-purple-500/20 bg-purple-500/5 shadow-xs'>
+              <CardHeader className='pb-2'>
+                <div className='flex items-center justify-between'>
+                  <CardTitle className='text-base font-semibold flex items-center gap-2'>
+                    <FolderOpen className='size-5 text-purple-500' />
+                    Curriculum Sections, Videos & Chapter PDFs
+                  </CardTitle>
+                </div>
+                <CardDescription className='text-xs'>
+                  Organize chapter sections (e.g. Introduction, HTML & CSS, JavaScript), attach section videos, and upload multiple PDFs per section.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='pt-2'>
+                <div className='p-4 rounded-xl border bg-background/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
+                  <div>
+                    <p className='text-sm font-semibold text-foreground'>Manage Multi-Section Resources & Videos</p>
+                    <p className='text-xs text-muted-foreground mt-0.5'>
+                      Upload 3 PDFs for Intro, 5 PDFs for HTML/CSS, 8 PDFs for JavaScript, and link chapter videos.
+                    </p>
+                  </div>
+                  <Button
+                    variant='default'
+                    size='sm'
+                    className='gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white'
+                    onClick={() => navigate({ to: '/resources', search: { session_id: String(session.id) } })}
+                  >
+                    <FolderOpen className='size-4' /> Open Sections & PDFs
+                  </Button>
                 </div>
               </CardContent>
             </Card>

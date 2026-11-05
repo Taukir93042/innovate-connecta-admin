@@ -3,6 +3,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
+  adminInstructorService,
+  type InstructorItem,
+} from '@/services/admin-instructors'
+import {
+  adminRecordedSessionService,
+  type RecordedSessionItem,
+} from '@/services/admin-recorded-sessions'
+import {
+  adminSessionCategoryService,
+  type SessionCategoryItem,
+} from '@/services/admin-session-category'
+import {
   ArrowLeft,
   Loader2,
   Save,
@@ -17,14 +29,11 @@ import {
   FolderTree,
   FileText,
   Download,
+  FolderOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { FCKEditor } from '@/components/fck-editor'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -32,6 +41,8 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -39,18 +50,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  adminRecordedSessionService,
-  type RecordedSessionItem,
-} from '@/services/admin-recorded-sessions'
-import {
-  adminSessionCategoryService,
-  type SessionCategoryItem,
-} from '@/services/admin-session-category'
-import {
-  adminInstructorService,
-  type InstructorItem,
-} from '@/services/admin-instructors'
+import { Switch } from '@/components/ui/switch'
+import { FCKEditor } from '@/components/fck-editor'
 
 interface RecordedSessionFormProps {
   initialData?: RecordedSessionItem | null
@@ -68,20 +69,32 @@ export function RecordedSessionForm({
   const [slug, setSlug] = useState(initialData?.slug || '')
   const [heading, setHeading] = useState(initialData?.heading || '')
   const [categoryId, setCategoryId] = useState<string>(
-    initialData?.session_category_id ? String(initialData.session_category_id) : ''
+    initialData?.session_category_id
+      ? String(initialData.session_category_id)
+      : ''
   )
   const [instructorId, setInstructorId] = useState<string>(
     initialData?.instructor_id ? String(initialData.instructor_id) : 'none'
   )
   const [duration, setDuration] = useState(initialData?.duration || '')
   const [lessons, setLessons] = useState(initialData?.lessons || '')
-  const [originalPrice, setOriginalPrice] = useState(initialData?.original_price || '')
-  const [discountPrice, setDiscountPrice] = useState(initialData?.discount_price || '')
-  const [previewVideoUrl, setPreviewVideoUrl] = useState(initialData?.preview_video_url || '')
-  
+  const [originalPrice, setOriginalPrice] = useState(
+    initialData?.original_price || ''
+  )
+  const [discountPrice, setDiscountPrice] = useState(
+    initialData?.discount_price || ''
+  )
+  const [previewVideoUrl, setPreviewVideoUrl] = useState(
+    initialData?.preview_video_url || ''
+  )
+
   // 2 Rich Text Editors
-  const [courseOverview, setCourseOverview] = useState(initialData?.course_overview || '')
-  const [whatYouWillLearn, setWhatYouWillLearn] = useState(initialData?.what_you_will_learn || '')
+  const [courseOverview, setCourseOverview] = useState(
+    initialData?.course_overview || ''
+  )
+  const [whatYouWillLearn, setWhatYouWillLearn] = useState(
+    initialData?.what_you_will_learn || ''
+  )
 
   const [isActive, setIsActive] = useState<boolean>(
     initialData?.is_active !== undefined ? initialData.is_active : true
@@ -98,7 +111,9 @@ export function RecordedSessionForm({
 
   // Resource PDF state
   const [resourceFile, setResourceFile] = useState<File | null>(null)
-  const [existingResource, setExistingResource] = useState(initialData?.resource || null)
+  const [existingResource, setExistingResource] = useState(
+    initialData?.resource || null
+  )
   const [removeResource, setRemoveResource] = useState(false)
 
   // Remote data lists
@@ -115,8 +130,14 @@ export function RecordedSessionForm({
       setTitle(initialData.title || '')
       setSlug(initialData.slug || '')
       setHeading(initialData.heading || '')
-      setCategoryId(initialData.session_category_id ? String(initialData.session_category_id) : '')
-      setInstructorId(initialData.instructor_id ? String(initialData.instructor_id) : 'none')
+      setCategoryId(
+        initialData.session_category_id
+          ? String(initialData.session_category_id)
+          : ''
+      )
+      setInstructorId(
+        initialData.instructor_id ? String(initialData.instructor_id) : 'none'
+      )
       setDuration(initialData.duration || '')
       setLessons(initialData.lessons || '')
       setOriginalPrice(initialData.original_price || '')
@@ -124,8 +145,12 @@ export function RecordedSessionForm({
       setPreviewVideoUrl(initialData.preview_video_url || '')
       setCourseOverview(initialData.course_overview || '')
       setWhatYouWillLearn(initialData.what_you_will_learn || '')
-      setIsActive(initialData.is_active !== undefined ? initialData.is_active : true)
-      setIsFeatured(initialData.is_featured !== undefined ? initialData.is_featured : false)
+      setIsActive(
+        initialData.is_active !== undefined ? initialData.is_active : true
+      )
+      setIsFeatured(
+        initialData.is_featured !== undefined ? initialData.is_featured : false
+      )
       setThumbnailPreview(initialData.thumbnail_url || null)
       setExistingResource(initialData.resource || null)
     }
@@ -142,10 +167,14 @@ export function RecordedSessionForm({
 
         if (isMounted) {
           if (catsRes.status === 'fulfilled' && catsRes.value?.data) {
-            setCategories(Array.isArray(catsRes.value.data) ? catsRes.value.data : [])
+            setCategories(
+              Array.isArray(catsRes.value.data) ? catsRes.value.data : []
+            )
           }
           if (instsRes.status === 'fulfilled' && instsRes.value?.data) {
-            setInstructors(Array.isArray(instsRes.value.data) ? instsRes.value.data : [])
+            setInstructors(
+              Array.isArray(instsRes.value.data) ? instsRes.value.data : []
+            )
           }
         }
       } catch (err) {
@@ -184,7 +213,10 @@ export function RecordedSessionForm({
   const handleResourceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const f = e.target.files[0]
-      if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
+      if (
+        f.type !== 'application/pdf' &&
+        !f.name.toLowerCase().endsWith('.pdf')
+      ) {
         toast.error('Only PDF files (.pdf) are allowed.')
         e.target.value = ''
         return
@@ -223,10 +255,13 @@ export function RecordedSessionForm({
       }
       if (duration.trim()) formData.append('duration', duration.trim())
       if (lessons.trim()) formData.append('lessons', lessons.trim())
-      if (originalPrice.trim()) formData.append('original_price', originalPrice.trim())
-      if (discountPrice.trim()) formData.append('discount_price', discountPrice.trim())
-      if (previewVideoUrl.trim()) formData.append('preview_video_url', previewVideoUrl.trim())
-      
+      if (originalPrice.trim())
+        formData.append('original_price', originalPrice.trim())
+      if (discountPrice.trim())
+        formData.append('discount_price', discountPrice.trim())
+      if (previewVideoUrl.trim())
+        formData.append('preview_video_url', previewVideoUrl.trim())
+
       // Editor 1: Course Overview
       formData.append('course_overview', courseOverview || '')
       // Editor 2: What You'll Learn
@@ -251,7 +286,10 @@ export function RecordedSessionForm({
 
       if (isEdit && initialData) {
         formData.append('_method', 'PUT')
-        await adminRecordedSessionService.updateRecordedSession(initialData.id, formData)
+        await adminRecordedSessionService.updateRecordedSession(
+          initialData.id,
+          formData
+        )
         toast.success('Recorded session & resources updated successfully!')
       } else {
         await adminRecordedSessionService.createRecordedSession(formData)
@@ -261,7 +299,10 @@ export function RecordedSessionForm({
       navigate({ to: '/recorded-sessions' })
     } catch (err: any) {
       console.error('Save failed', err)
-      const msg = err.response?.data?.message || err.message || 'Failed to save recorded session.'
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to save recorded session.'
       toast.error(msg)
       if (err.response?.data?.errors) {
         setErrors(err.response.data.errors)
@@ -286,7 +327,9 @@ export function RecordedSessionForm({
           </Button>
           <div>
             <h1 className='text-xl font-bold tracking-tight'>
-              {isEdit ? 'Edit Recorded Masterclass' : 'Create New Recorded Masterclass'}
+              {isEdit
+                ? 'Edit Recorded Masterclass'
+                : 'Create New Recorded Masterclass'}
             </h1>
             <p className='text-xs text-muted-foreground'>
               {isEdit
@@ -305,7 +348,11 @@ export function RecordedSessionForm({
           >
             Cancel
           </Button>
-          <Button type='submit' disabled={isSubmitting} className='gap-2 shadow-sm'>
+          <Button
+            type='submit'
+            disabled={isSubmitting}
+            className='gap-2 shadow-sm'
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -321,17 +368,18 @@ export function RecordedSessionForm({
         </div>
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+      <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
         {/* Left 2 Columns: Main Metadata & Editors */}
-        <div className='lg:col-span-2 space-y-6'>
+        <div className='space-y-6 lg:col-span-2'>
           {/* Card 1: Primary Course Info */}
           <Card>
             <CardHeader className='pb-3'>
-              <CardTitle className='text-base flex items-center gap-2'>
+              <CardTitle className='flex items-center gap-2 text-base'>
                 <Video className='h-4 w-4 text-primary' /> Basic Course Identity
               </CardTitle>
               <CardDescription>
-                Provide the core title, punchy subheading, category and instructor.
+                Provide the core title, punchy subheading, category and
+                instructor.
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
@@ -371,7 +419,9 @@ export function RecordedSessionForm({
               <div className='space-y-1.5'>
                 <div className='flex items-center justify-between'>
                   <Label htmlFor='slug'>URL Slug</Label>
-                  <span className='text-[11px] text-muted-foreground'>(Auto-filled from title)</span>
+                  <span className='text-[11px] text-muted-foreground'>
+                    (Auto-filled from title)
+                  </span>
                 </div>
                 <Input
                   id='slug'
@@ -382,11 +432,15 @@ export function RecordedSessionForm({
               </div>
 
               {/* Category & Instructor Grid */}
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2'>
+              <div className='grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2'>
                 {/* Category Dropdown */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='category' className='flex items-center gap-1.5'>
-                    <FolderTree className='h-3.5 w-3.5 text-muted-foreground' /> Category
+                  <Label
+                    htmlFor='category'
+                    className='flex items-center gap-1.5'
+                  >
+                    <FolderTree className='h-3.5 w-3.5 text-muted-foreground' />{' '}
+                    Category
                   </Label>
                   <Select value={categoryId} onValueChange={setCategoryId}>
                     <SelectTrigger id='category'>
@@ -404,8 +458,12 @@ export function RecordedSessionForm({
 
                 {/* Instructor Dropdown */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='instructor' className='flex items-center gap-1.5'>
-                    <GraduationCap className='h-3.5 w-3.5 text-muted-foreground' /> Assigned Instructor
+                  <Label
+                    htmlFor='instructor'
+                    className='flex items-center gap-1.5'
+                  >
+                    <GraduationCap className='h-3.5 w-3.5 text-muted-foreground' />{' '}
+                    Assigned Instructor
                   </Label>
                   <Select value={instructorId} onValueChange={setInstructorId}>
                     <SelectTrigger id='instructor'>
@@ -415,7 +473,8 @@ export function RecordedSessionForm({
                       <SelectItem value='none'>None (No Instructor)</SelectItem>
                       {instructors.map((inst) => (
                         <SelectItem key={inst.id} value={String(inst.id)}>
-                          {inst.name} {inst.designation ? `(${inst.designation})` : ''}
+                          {inst.name}{' '}
+                          {inst.designation ? `(${inst.designation})` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -428,18 +487,22 @@ export function RecordedSessionForm({
           {/* Card 2: Pricing, Duration & Video URL */}
           <Card>
             <CardHeader className='pb-3'>
-              <CardTitle className='text-base flex items-center gap-2'>
-                <IndianRupee className='h-4 w-4 text-emerald-500' /> Pricing, Duration & Content Structure
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <IndianRupee className='h-4 w-4 text-emerald-500' /> Pricing,
+                Duration & Content Structure
               </CardTitle>
               <CardDescription>
                 Set the pricing structure and course volume meta.
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4'>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4'>
                 {/* Original Price */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='original_price' className='text-xs uppercase font-semibold text-muted-foreground'>
+                  <Label
+                    htmlFor='original_price'
+                    className='text-xs font-semibold text-muted-foreground uppercase'
+                  >
                     Original Price (₹)
                   </Label>
                   <Input
@@ -448,12 +511,17 @@ export function RecordedSessionForm({
                     value={originalPrice}
                     onChange={(e) => setOriginalPrice(e.target.value)}
                   />
-                  <p className='text-[11px] text-muted-foreground'>Strikethrough price</p>
+                  <p className='text-[11px] text-muted-foreground'>
+                    Strikethrough price
+                  </p>
                 </div>
 
                 {/* Offer / Discount Price */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='discount_price' className='text-xs uppercase font-semibold text-emerald-600'>
+                  <Label
+                    htmlFor='discount_price'
+                    className='text-xs font-semibold text-emerald-600 uppercase'
+                  >
                     Offer Price (₹)
                   </Label>
                   <Input
@@ -463,12 +531,17 @@ export function RecordedSessionForm({
                     onChange={(e) => setDiscountPrice(e.target.value)}
                     className='font-bold text-emerald-600'
                   />
-                  <p className='text-[11px] text-muted-foreground'>Active selling price</p>
+                  <p className='text-[11px] text-muted-foreground'>
+                    Active selling price
+                  </p>
                 </div>
 
                 {/* Duration */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='duration' className='text-xs uppercase font-semibold text-muted-foreground flex items-center gap-1'>
+                  <Label
+                    htmlFor='duration'
+                    className='flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase'
+                  >
                     <Clock className='h-3 w-3' /> Duration
                   </Label>
                   <Input
@@ -477,12 +550,17 @@ export function RecordedSessionForm({
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
                   />
-                  <p className='text-[11px] text-muted-foreground'>e.g. 3.5 Hours</p>
+                  <p className='text-[11px] text-muted-foreground'>
+                    e.g. 3.5 Hours
+                  </p>
                 </div>
 
                 {/* Lessons Count */}
                 <div className='space-y-1.5'>
-                  <Label htmlFor='lessons' className='text-xs uppercase font-semibold text-muted-foreground flex items-center gap-1'>
+                  <Label
+                    htmlFor='lessons'
+                    className='flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase'
+                  >
                     <BookOpen className='h-3 w-3' /> Lessons Count
                   </Label>
                   <Input
@@ -491,23 +569,30 @@ export function RecordedSessionForm({
                     value={lessons}
                     onChange={(e) => setLessons(e.target.value)}
                   />
-                  <p className='text-[11px] text-muted-foreground'>e.g. 12 Lessons</p>
+                  <p className='text-[11px] text-muted-foreground'>
+                    e.g. 12 Lessons
+                  </p>
                 </div>
               </div>
 
               {/* Preview Video / Embed URL */}
               <div className='space-y-1.5 pt-2'>
-                <Label htmlFor='preview_video_url' className='flex items-center gap-1.5'>
-                  <Video className='h-3.5 w-3.5 text-primary' /> Free Preview Video Embed / YouTube URL
+                <Label
+                  htmlFor='preview_video_url'
+                  className='flex items-center gap-1.5'
+                >
+                  <Video className='h-3.5 w-3.5 text-primary' /> Free Preview
+                  Video Embed / YouTube URL
                 </Label>
                 <Input
                   id='preview_video_url'
-                  placeholder='https://www.youtube.com/embed/dQw4w9WgXcQ'
+                  placeholder='https://www.youtube.com/watch?v=...'
                   value={previewVideoUrl}
                   onChange={(e) => setPreviewVideoUrl(e.target.value)}
                 />
                 <p className='text-[11px] text-muted-foreground'>
-                  Allows users on the website to watch a free video preview directly in the popup modal.
+                  Allows users on the website to watch a free video preview
+                  directly in the popup modal.
                 </p>
               </div>
             </CardContent>
@@ -516,21 +601,29 @@ export function RecordedSessionForm({
           {/* Card 3: 2 Rich Text Editors */}
           <Card>
             <CardHeader className='pb-3'>
-              <CardTitle className='text-base flex items-center gap-2'>
-                <Sparkles className='h-4 w-4 text-amber-500' /> Course Content & Rich Text Sections (2 Editors)
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <Sparkles className='h-4 w-4 text-amber-500' /> Course Content &
+                Rich Text Sections (2 Editors)
               </CardTitle>
               <CardDescription>
-                Format rich HTML descriptions for Course Overview & Key Highlights.
+                Format rich HTML descriptions for Course Overview & Key
+                Highlights.
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-6'>
               {/* Text Editor 1: Course Overview */}
               <div className='space-y-2'>
                 <div className='flex items-center justify-between'>
-                  <Label htmlFor='course-overview' className='text-sm font-semibold flex items-center gap-1.5 text-primary'>
-                    <span>Editor 1:</span> Course Overview (About This Masterclass)
+                  <Label
+                    htmlFor='course-overview'
+                    className='flex items-center gap-1.5 text-sm font-semibold text-primary'
+                  >
+                    <span>Editor 1:</span> Course Overview (About This
+                    Masterclass)
                   </Label>
-                  <span className='text-[11px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded'>Rich HTML Editor</span>
+                  <span className='rounded bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground'>
+                    Rich HTML Editor
+                  </span>
                 </div>
                 <FCKEditor
                   value={courseOverview}
@@ -539,17 +632,23 @@ export function RecordedSessionForm({
                   minHeight='220px'
                 />
                 <p className='text-[11px] text-muted-foreground'>
-                  Displayed under the primary "Course Overview" tab on the course details page.
+                  Displayed under the primary "Course Overview" tab on the
+                  course details page.
                 </p>
               </div>
 
               {/* Text Editor 2: What You'll Learn / Key Highlights */}
-              <div className='space-y-2 pt-4 border-t'>
+              <div className='space-y-2 border-t pt-4'>
                 <div className='flex items-center justify-between'>
-                  <Label htmlFor='what-you-will-learn' className='text-sm font-semibold flex items-center gap-1.5 text-emerald-600'>
+                  <Label
+                    htmlFor='what-you-will-learn'
+                    className='flex items-center gap-1.5 text-sm font-semibold text-emerald-600'
+                  >
                     <span>Editor 2:</span> What You'll Learn / Key Highlights
                   </Label>
-                  <span className='text-[11px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded'>Rich HTML Editor</span>
+                  <span className='rounded bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground'>
+                    Rich HTML Editor
+                  </span>
                 </div>
                 <FCKEditor
                   value={whatYouWillLearn}
@@ -558,7 +657,8 @@ export function RecordedSessionForm({
                   minHeight='220px'
                 />
                 <p className='text-[11px] text-muted-foreground'>
-                  Displayed in the right-side highlight card & key takeaways breakdown.
+                  Displayed in the right-side highlight card & key takeaways
+                  breakdown.
                 </p>
               </div>
             </CardContent>
@@ -570,8 +670,9 @@ export function RecordedSessionForm({
           {/* Card 1: Course PDF Resource (Study Notes) */}
           <Card className='border-primary/20 shadow-sm'>
             <CardHeader className='pb-3'>
-              <CardTitle className='text-base flex items-center gap-2'>
-                <FileText className='h-4 w-4 text-red-500' /> Course PDF Resource
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <FileText className='h-4 w-4 text-red-500' /> Course PDF
+                Resource
               </CardTitle>
               <CardDescription>
                 Attach 1 PDF notes file (max 20 MB) for enrolled students.
@@ -579,18 +680,21 @@ export function RecordedSessionForm({
             </CardHeader>
             <CardContent className='space-y-4'>
               {existingResource && !removeResource ? (
-                <div className='p-3 rounded-lg border bg-muted/40 space-y-2.5'>
+                <div className='space-y-2.5 rounded-lg border bg-muted/40 p-3'>
                   <div className='flex items-start justify-between gap-2'>
-                    <div className='flex items-center gap-2.5 min-w-0'>
-                      <div className='p-2 rounded bg-red-500/10 text-red-500 flex-shrink-0'>
+                    <div className='flex min-w-0 items-center gap-2.5'>
+                      <div className='flex-shrink-0 rounded bg-red-500/10 p-2 text-red-500'>
                         <FileText className='h-4 w-4' />
                       </div>
                       <div className='min-w-0'>
-                        <p className='text-xs font-semibold truncate text-foreground'>
+                        <p className='truncate text-xs font-semibold text-foreground'>
                           {existingResource.file_name}
                         </p>
-                        <p className='text-[11px] text-muted-foreground uppercase font-mono mt-0.5'>
-                          PDF {existingResource.file_size ? `• ${existingResource.file_size}` : ''}
+                        <p className='mt-0.5 font-mono text-[11px] text-muted-foreground uppercase'>
+                          PDF{' '}
+                          {existingResource.file_size
+                            ? `• ${existingResource.file_size}`
+                            : ''}
                         </p>
                       </div>
                     </div>
@@ -600,7 +704,7 @@ export function RecordedSessionForm({
                         setRemoveResource(true)
                         setResourceFile(null)
                       }}
-                      className='text-muted-foreground hover:text-destructive p-1 rounded transition'
+                      className='rounded p-1 text-muted-foreground transition hover:text-destructive'
                       title='Remove attached PDF'
                     >
                       <X className='h-4 w-4' />
@@ -612,14 +716,18 @@ export function RecordedSessionForm({
                       href={existingResource.file_url}
                       target='_blank'
                       rel='noopener noreferrer'
-                      className='text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-medium'
+                      className='mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline'
                     >
-                      <Download className='h-3.5 w-3.5' /> Preview / Download Current PDF
+                      <Download className='h-3.5 w-3.5' /> Preview / Download
+                      Current PDF
                     </a>
                   )}
 
-                  <div className='pt-2 border-t space-y-1.5'>
-                    <Label htmlFor='replace-pdf-input' className='text-xs text-muted-foreground'>
+                  <div className='space-y-1.5 border-t pt-2'>
+                    <Label
+                      htmlFor='replace-pdf-input'
+                      className='text-xs text-muted-foreground'
+                    >
                       Upload Replacement PDF:
                     </Label>
                     <Input
@@ -632,7 +740,10 @@ export function RecordedSessionForm({
                 </div>
               ) : (
                 <div className='space-y-2'>
-                  <Label htmlFor='resource-pdf-input' className='text-xs font-semibold'>
+                  <Label
+                    htmlFor='resource-pdf-input'
+                    className='text-xs font-semibold'
+                  >
                     Upload PDF Notes File
                   </Label>
                   <Input
@@ -642,18 +753,60 @@ export function RecordedSessionForm({
                     onChange={handleResourceFileChange}
                   />
                   <p className='text-[11px] text-muted-foreground'>
-                    Single PDF file up to 20 MB. Auto-unlocked for students who enroll.
+                    Single PDF file up to 20 MB. Auto-unlocked for students who
+                    enroll.
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
+          {/* Multi-Section Curriculum & Chapter PDFs Manager */}
+          <Card className='border-purple-500/30 bg-purple-500/5 shadow-sm'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <FolderOpen className='h-4 w-4 text-purple-500' />
+                Multi-Section Videos & Chapter PDFs
+              </CardTitle>
+              <CardDescription>
+                Upload chapter sections with their own videos and multiple PDFs
+                (e.g. Introduction & Basics, HTML & CSS, JavaScript).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              <p className='text-xs leading-relaxed text-muted-foreground'>
+                Want to upload{' '}
+                <strong>Introduction & Basics (video + 3 PDFs)</strong>,{' '}
+                <strong>HTML & CSS (video + 5 PDFs)</strong>, and{' '}
+                <strong>JavaScript (video + 8 PDFs)</strong>?
+              </p>
+              <Button
+                type='button'
+                variant='default'
+                className='w-full gap-2 bg-purple-600 text-xs font-semibold text-white hover:bg-purple-700'
+                onClick={() => {
+                  if (initialData?.id) {
+                    navigate({
+                      to: '/resources',
+                      search: { session_id: String(initialData.id) },
+                    })
+                  } else {
+                    navigate({ to: '/resources' })
+                  }
+                }}
+              >
+                <FolderOpen className='h-3.5 w-3.5' /> Open Resources & Manage
+                Sections
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Card 2: Thumbnail Image */}
           <Card>
             <CardHeader className='pb-3'>
-              <CardTitle className='text-base flex items-center gap-2'>
-                <UploadCloud className='h-4 w-4 text-primary' /> Course Thumbnail
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <UploadCloud className='h-4 w-4 text-primary' /> Course
+                Thumbnail
               </CardTitle>
               <CardDescription>
                 Upload a cover banner for cards & hero banner.
@@ -661,25 +814,29 @@ export function RecordedSessionForm({
             </CardHeader>
             <CardContent className='space-y-4'>
               {thumbnailPreview ? (
-                <div className='relative rounded-lg overflow-hidden border border-border aspect-video bg-muted flex items-center justify-center group'>
+                <div className='group relative flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-muted'>
                   <img
                     src={thumbnailPreview}
                     alt='Course Thumbnail'
-                    className='w-full h-full object-cover'
+                    className='h-full w-full object-cover'
                   />
                   <button
                     type='button'
                     onClick={handleRemoveThumbnail}
-                    className='absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1.5 rounded-full opacity-90 transition'
+                    className='absolute top-2 right-2 rounded-full bg-black/70 p-1.5 text-white opacity-90 transition hover:bg-black'
                   >
                     <X className='h-4 w-4' />
                   </button>
                 </div>
               ) : (
-                <label className='flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/30 hover:border-primary rounded-lg aspect-video p-4 cursor-pointer transition bg-muted/20 hover:bg-muted/40'>
-                  <UploadCloud className='h-8 w-8 text-muted-foreground mb-2' />
-                  <span className='text-xs font-semibold text-foreground'>Upload Course Thumbnail</span>
-                  <span className='text-[11px] text-muted-foreground mt-1'>PNG, JPG, WEBP up to 5MB</span>
+                <label className='flex aspect-video cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-4 transition hover:border-primary hover:bg-muted/40'>
+                  <UploadCloud className='mb-2 h-8 w-8 text-muted-foreground' />
+                  <span className='text-xs font-semibold text-foreground'>
+                    Upload Course Thumbnail
+                  </span>
+                  <span className='mt-1 text-[11px] text-muted-foreground'>
+                    PNG, JPG, WEBP up to 5MB
+                  </span>
                   <input
                     type='file'
                     accept='image/*'
@@ -691,7 +848,7 @@ export function RecordedSessionForm({
 
               {thumbnailPreview && (
                 <label className='block text-center'>
-                  <span className='text-xs text-primary hover:underline cursor-pointer'>
+                  <span className='cursor-pointer text-xs text-primary hover:underline'>
                     Change Image
                   </span>
                   <input
@@ -709,13 +866,18 @@ export function RecordedSessionForm({
           <Card>
             <CardHeader className='pb-3'>
               <CardTitle className='text-base'>Visibility & Status</CardTitle>
-              <CardDescription>Publishing settings for this course.</CardDescription>
+              <CardDescription>
+                Publishing settings for this course.
+              </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
               {/* Active Toggle */}
-              <div className='flex items-center justify-between p-3 rounded-lg border bg-card'>
+              <div className='flex items-center justify-between rounded-lg border bg-card p-3'>
                 <div className='space-y-0.5'>
-                  <Label htmlFor='is_active' className='text-sm font-medium cursor-pointer'>
+                  <Label
+                    htmlFor='is_active'
+                    className='cursor-pointer text-sm font-medium'
+                  >
                     Active / Published
                   </Label>
                   <p className='text-xs text-muted-foreground'>
@@ -735,25 +897,32 @@ export function RecordedSessionForm({
           {instructorId && instructorId !== 'none' && (
             <Card>
               <CardHeader className='pb-2'>
-                <CardTitle className='text-xs uppercase text-muted-foreground font-semibold'>
+                <CardTitle className='text-xs font-semibold text-muted-foreground uppercase'>
                   Assigned Instructor Preview
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {(() => {
-                  const inst = instructors.find((i) => String(i.id) === instructorId)
+                  const inst = instructors.find(
+                    (i) => String(i.id) === instructorId
+                  )
                   if (!inst) return null
                   return (
                     <div className='flex items-center gap-3'>
                       <Avatar className='h-10 w-10 border'>
-                        <AvatarImage src={inst.image_url || undefined} alt={inst.name} />
-                        <AvatarFallback className='bg-primary/10 text-primary font-bold text-xs'>
+                        <AvatarImage
+                          src={inst.image_url || undefined}
+                          alt={inst.name}
+                        />
+                        <AvatarFallback className='bg-primary/10 text-xs font-bold text-primary'>
                           {inst.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className='text-sm font-bold leading-none'>{inst.name}</p>
-                        <p className='text-xs text-muted-foreground mt-1'>
+                        <p className='text-sm leading-none font-bold'>
+                          {inst.name}
+                        </p>
+                        <p className='mt-1 text-xs text-muted-foreground'>
                           {inst.designation || 'Instructor'}
                         </p>
                       </div>
