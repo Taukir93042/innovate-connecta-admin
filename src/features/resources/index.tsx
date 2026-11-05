@@ -9,9 +9,9 @@ import {
   FolderOpen,
   FileText,
   Download,
-  AlertCircle,
-  FolderPlus,
+
   Layers,
+  Video,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -96,6 +96,8 @@ export function ResourcesFeature() {
   const [formTitle, setFormTitle] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
   const [resourceFile, setResourceFile] = useState<File | null>(null)
+  const [formResourceType, setFormResourceType] = useState<'pdf' | 'video'>('pdf')
+  const [formVideoUrl, setFormVideoUrl] = useState('')
   const [formAvailableSections, setFormAvailableSections] = useState<ResourceSectionItem[]>([])
   const [loadingFormSections, setLoadingFormSections] = useState(false)
 
@@ -106,9 +108,11 @@ export function ResourcesFeature() {
   const [loadingSections, setLoadingSections] = useState(false)
   const [newSectionTitle, setNewSectionTitle] = useState('')
   const [newSectionDesc, setNewSectionDesc] = useState('')
+  const [newSectionVideoUrl, setNewSectionVideoUrl] = useState('')
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
   const [editingSectionTitle, setEditingSectionTitle] = useState('')
   const [editingSectionDesc, setEditingSectionDesc] = useState('')
+  const [editingSectionVideoUrl, setEditingSectionVideoUrl] = useState('')
   const [isSavingSection, setIsSavingSection] = useState(false)
 
   const fetchRecordedSessions = async () => {
@@ -192,6 +196,8 @@ export function ResourcesFeature() {
     setFormTitle('')
     setFormIsActive(true)
     setResourceFile(null)
+    setFormResourceType('pdf')
+    setFormVideoUrl('')
     if (selectedSessionId !== 'all') {
       loadSectionsForSession(selectedSessionId)
     } else {
@@ -208,6 +214,13 @@ export function ResourcesFeature() {
     setFormTitle(item.title)
     setFormIsActive(item.is_active)
     setResourceFile(null)
+    if (item.file_type === 'video' || item.file_size === 'Video' || item.file_path?.startsWith('http')) {
+      setFormResourceType('video')
+      setFormVideoUrl(item.file_path || '')
+    } else {
+      setFormResourceType('pdf')
+      setFormVideoUrl('')
+    }
     setIsFormOpen(true)
     if (recId) {
       loadSectionsForSession(recId)
@@ -234,25 +247,19 @@ export function ResourcesFeature() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-
-      // Check if file is PDF
-      const isPdf =
-        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
       if (!isPdf) {
         toast.error('Only PDF files (.pdf) are allowed.')
         e.target.value = ''
         setResourceFile(null)
         return
       }
-
-      // Check max 20 MB size limit
       if (file.size > MAX_PDF_SIZE_BYTES) {
         toast.error('PDF file size exceeds 20 MB limit. Please select a smaller PDF.')
         e.target.value = ''
         setResourceFile(null)
         return
       }
-
       setResourceFile(file)
     }
   }
@@ -283,14 +290,20 @@ export function ResourcesFeature() {
       return
     }
 
-    if (!editingItem && !resourceFile) {
-      toast.error('Please select a PDF file to upload')
-      return
-    }
-
-    if (resourceFile && resourceFile.size > MAX_PDF_SIZE_BYTES) {
-      toast.error('PDF file size must not exceed 20 MB.')
-      return
+    if (formResourceType === 'video') {
+      if (!formVideoUrl.trim()) {
+        toast.error('Please enter a Video URL (YouTube, Vimeo, MP4, etc.)')
+        return
+      }
+    } else {
+      if (!editingItem && !resourceFile) {
+        toast.error('Please select a PDF file to upload')
+        return
+      }
+      if (resourceFile && resourceFile.size > MAX_PDF_SIZE_BYTES) {
+        toast.error('PDF file size must not exceed 20 MB.')
+        return
+      }
     }
 
     try {
@@ -301,10 +314,13 @@ export function ResourcesFeature() {
         formData.append('resource_section_id', formSectionId)
       }
       formData.append('title', formTitle.trim())
-      formData.append('category', 'PDF Notes')
+      formData.append('resource_type', formResourceType)
+      formData.append('category', formResourceType === 'video' ? 'Video Lecture' : 'PDF Notes')
       formData.append('is_active', formIsActive ? '1' : '0')
 
-      if (resourceFile) {
+      if (formResourceType === 'video') {
+        formData.append('video_url', formVideoUrl.trim())
+      } else if (resourceFile) {
         formData.append('file', resourceFile)
       }
 
@@ -312,20 +328,20 @@ export function ResourcesFeature() {
         formData.append('_method', 'PUT')
         const res = await adminResourceService.updateResource(editingItem.id, formData)
         if (res.status) {
-          toast.success(res.message || 'PDF updated successfully')
+          toast.success(res.message || 'Resource updated successfully')
           setIsFormOpen(false)
           fetchResources()
         }
       } else {
         const res = await adminResourceService.createResource(formData)
         if (res.status) {
-          toast.success(res.message || 'PDF uploaded successfully')
+          toast.success(res.message || 'Resource uploaded successfully')
           setIsFormOpen(false)
           fetchResources()
         }
       }
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to save PDF'))
+      toast.error(getApiErrorMessage(err, 'Failed to save resource'))
     } finally {
       setIsSubmitting(false)
     }
@@ -429,12 +445,14 @@ export function ResourcesFeature() {
         recorded_session_id: Number(sectionSessionId),
         title: newSectionTitle.trim(),
         description: newSectionDesc.trim() || undefined,
+        video_url: newSectionVideoUrl.trim() || undefined,
         sort_order: sections.length,
       })
       if (res.status) {
         toast.success('Section heading created!')
         setNewSectionTitle('')
         setNewSectionDesc('')
+        setNewSectionVideoUrl('')
         fetchSectionsForManage(sectionSessionId)
         if (formRecordedSessionId === sectionSessionId) {
           loadSectionsForSession(sectionSessionId)
@@ -457,6 +475,7 @@ export function ResourcesFeature() {
       const res = await adminResourceSectionService.updateSection(sectionId, {
         title: editingSectionTitle.trim(),
         description: editingSectionDesc.trim() || undefined,
+        video_url: editingSectionVideoUrl.trim() || undefined,
       })
       if (res.status) {
         toast.success('Section updated successfully!')
@@ -507,10 +526,10 @@ export function ResourcesFeature() {
         <div className='flex flex-wrap items-center justify-between gap-4'>
           <div>
             <h1 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
-              <FolderOpen className='h-6 w-6 text-primary' /> Session PDF Management
+              <FolderOpen className='h-6 w-6 text-primary' /> Curriculum & Resources (Videos & PDFs)
             </h1>
             <p className='text-sm text-muted-foreground'>
-              Manage resource section headings and multiple PDF files per recorded session.
+              Manage curriculum sections, video lectures, and study PDFs for each recorded session.
             </p>
           </div>
 
@@ -533,12 +552,12 @@ export function ResourcesFeature() {
               className='gap-2 shadow-sm'
             >
               <Layers className='h-4 w-4 text-primary' />
-              Manage Sections
+              Manage Sections & Videos
             </Button>
 
             <Button onClick={handleOpenCreateModal} className='gap-2 shadow-sm'>
               <Plus className='h-4 w-4' />
-              Upload PDF File
+              + Add Resource (Video or PDF)
             </Button>
           </div>
         </div>
@@ -631,6 +650,7 @@ export function ResourcesFeature() {
               ) : (
                 resources.map((res) => {
                   const isSelected = selectedIds.includes(res.id)
+                  const isVideo = res.file_type === 'video' || res.file_size === 'Video' || res.category === 'Video Lecture' || (res.file_path && res.file_path.startsWith('http'))
 
                   return (
                     <TableRow
@@ -650,9 +670,15 @@ export function ResourcesFeature() {
                       {/* Title & PDF File Name */}
                       <TableCell>
                         <div className='flex items-start gap-3'>
-                          <div className='p-2 rounded-lg bg-red-500/10 text-red-500 mt-0.5 flex-shrink-0'>
-                            <FileText className='h-5 w-5' />
-                          </div>
+                          {isVideo ? (
+                            <div className='p-2 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5 flex-shrink-0' title='Video Lecture'>
+                              <Video className='h-5 w-5' />
+                            </div>
+                          ) : (
+                            <div className='p-2 rounded-lg bg-red-500/10 text-red-500 mt-0.5 flex-shrink-0' title='PDF Document'>
+                              <FileText className='h-5 w-5' />
+                            </div>
+                          )}
                           <div>
                             <p className='font-semibold text-foreground text-sm line-clamp-1'>
                               {res.title}
@@ -686,9 +712,15 @@ export function ResourcesFeature() {
 
                       {/* File Size */}
                       <TableCell>
-                        <Badge variant='outline' className='text-xs font-mono py-0 text-muted-foreground'>
-                          {res.file_size || 'PDF'}
-                        </Badge>
+                        {isVideo ? (
+                          <Badge variant='outline' className='text-xs font-medium py-0.5 px-2 text-purple-400 border-purple-500/30 bg-purple-500/10'>
+                            Video Lecture
+                          </Badge>
+                        ) : (
+                          <Badge variant='outline' className='text-xs font-mono py-0 text-muted-foreground'>
+                            {res.file_size || 'PDF'}
+                          </Badge>
+                        )}
                       </TableCell>
 
                       {/* Status */}
@@ -781,10 +813,10 @@ export function ResourcesFeature() {
             <form onSubmit={handleSubmitForm}>
               <DialogHeader>
                 <DialogTitle>
-                  {editingItem ? 'Edit Resource PDF' : 'Upload Resource PDF'}
+                  {editingItem ? (formResourceType === 'video' ? 'Edit Video Lecture' : 'Edit Resource PDF') : (formResourceType === 'video' ? 'Add Video Lecture' : 'Upload Resource PDF')}
                 </DialogTitle>
                 <DialogDescription>
-                  Upload a PDF resource (max 20 MB) and optionally assign it to an accordion section heading.
+                  Add a chapter video lecture or upload a PDF document for this masterclass section.
                 </DialogDescription>
               </DialogHeader>
 
@@ -853,6 +885,35 @@ export function ResourcesFeature() {
                   </p>
                 </div>
 
+                {/* Resource Type Selection */}
+                <div className='grid gap-1.5'>
+                  <Label className='font-semibold text-xs'>Resource Type</Label>
+                  <div className='grid grid-cols-2 gap-3'>
+                    <button
+                      type='button'
+                      onClick={() => setFormResourceType('pdf')}
+                      className={`p-2.5 rounded-lg border flex items-center justify-center gap-2 text-xs font-semibold transition ${
+                        formResourceType === 'pdf'
+                          ? 'border-red-500 bg-red-500/10 text-red-500'
+                          : 'border-border bg-card text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <FileText className='size-3.5' /> PDF Document (.pdf)
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => setFormResourceType('video')}
+                      className={`p-2.5 rounded-lg border flex items-center justify-center gap-2 text-xs font-semibold transition ${
+                        formResourceType === 'video'
+                          ? 'border-purple-500 bg-purple-500/10 text-purple-400'
+                          : 'border-border bg-card text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Video className='size-3.5' /> Video Lecture (URL)
+                    </button>
+                  </div>
+                </div>
+
                 {/* 3. Resource Title */}
                 <div className='grid gap-2'>
                   <Label htmlFor='title' className='font-semibold'>
@@ -867,29 +928,46 @@ export function ResourcesFeature() {
                   />
                 </div>
 
-                {/* 4. File Upload (PDF only, Max 20MB) */}
-                <div className='grid gap-2'>
-                  <div className='flex items-center justify-between'>
-                    <Label htmlFor='file' className='font-semibold'>
-                      PDF File {editingItem ? '(Leave blank to keep current)' : <span className='text-destructive'>*</span>}
+                {formResourceType === 'video' ? (
+                  <div className='grid gap-2'>
+                    <Label htmlFor='videoUrl' className='font-semibold flex items-center gap-1.5'>
+                      <Video className='size-4 text-purple-400' /> Video URL (YouTube, Vimeo, MP4) <span className='text-destructive'>*</span>
                     </Label>
-                    <span className='text-xs text-muted-foreground font-medium'>
-                      PDF only, Max 20 MB
-                    </span>
-                  </div>
-                  <Input
-                    id='file'
-                    type='file'
-                    accept='.pdf,application/pdf'
-                    onChange={handleFileChange}
-                    required={!editingItem}
-                  />
-                  {editingItem && editingItem.file_name && !resourceFile && (
-                    <p className='text-xs text-muted-foreground font-mono'>
-                      Current PDF: {editingItem.file_name} ({editingItem.file_size})
+                    <Input
+                      id='videoUrl'
+                      placeholder='e.g. https://www.youtube.com/watch?v=... or https://vimeo.com/...'
+                      value={formVideoUrl}
+                      onChange={(e) => setFormVideoUrl(e.target.value)}
+                      required
+                    />
+                    <p className='text-[11px] text-muted-foreground'>
+                      Enrolled students will be able to watch this video lesson directly in this chapter/section.
                     </p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className='grid gap-2'>
+                    <div className='flex items-center justify-between'>
+                      <Label htmlFor='file' className='font-semibold'>
+                        PDF File {editingItem ? '(Leave blank to keep current)' : <span className='text-destructive'>*</span>}
+                      </Label>
+                      <span className='text-xs text-muted-foreground font-medium'>
+                        PDF only, Max 20 MB
+                      </span>
+                    </div>
+                    <Input
+                      id='file'
+                      type='file'
+                      accept='.pdf,application/pdf'
+                      onChange={handleFileChange}
+                      required={!editingItem}
+                    />
+                    {editingItem && editingItem.file_name && !resourceFile && (
+                      <p className='text-xs text-muted-foreground font-mono'>
+                        Current PDF: {editingItem.file_name} ({editingItem.file_size})
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* 5. Active Switch */}
                 <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/20'>
@@ -978,6 +1056,11 @@ export function ResourcesFeature() {
                     value={newSectionDesc}
                     onChange={(e) => setNewSectionDesc(e.target.value)}
                   />
+                  <Input
+                    placeholder='Section Video URL (YouTube, Vimeo, MP4) — e.g. https://youtu.be/...'
+                    value={newSectionVideoUrl}
+                    onChange={(e) => setNewSectionVideoUrl(e.target.value)}
+                  />
                 </div>
                 <div className='flex justify-end'>
                   <Button
@@ -1024,6 +1107,11 @@ export function ResourcesFeature() {
                               value={editingSectionDesc}
                               onChange={(e) => setEditingSectionDesc(e.target.value)}
                               placeholder='Optional description'
+                            />
+                            <Input
+                              value={editingSectionVideoUrl}
+                              onChange={(e) => setEditingSectionVideoUrl(e.target.value)}
+                              placeholder='Section Video URL (YouTube, Vimeo, MP4) — Optional'
                               className='h-8 text-xs'
                             />
                             <div className='flex items-center gap-2 justify-end'>
@@ -1064,6 +1152,11 @@ export function ResourcesFeature() {
                               <Badge variant='outline' className='text-[10px] py-0 px-1.5 font-mono text-muted-foreground ml-1'>
                                 {sec.total_files || 0} PDFs
                               </Badge>
+                              {sec.video_url && (
+                                <Badge variant='outline' className='text-[10px] py-0 px-1.5 text-primary border-primary/30 ml-1 flex items-center gap-1'>
+                                  <Video className='h-2.5 w-2.5' /> Video
+                                </Badge>
+                              )}
                             </div>
 
                             <div className='flex items-center gap-1 flex-shrink-0'>
@@ -1075,6 +1168,7 @@ export function ResourcesFeature() {
                                   setEditingSectionId(sec.id)
                                   setEditingSectionTitle(sec.title)
                                   setEditingSectionDesc(sec.description || '')
+                                  setEditingSectionVideoUrl(sec.video_url || '')
                                 }}
                                 title='Edit section'
                               >

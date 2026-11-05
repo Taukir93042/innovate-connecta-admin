@@ -11,6 +11,7 @@ import {
   Download,
   IndianRupee,
   Sparkles,
+  Video,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -69,6 +70,7 @@ export function SessionForm() {
   // Form State
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
   const [category, setCategory] = useState('')
   const [instructorId, setInstructorId] = useState<string>('none')
   const [sectionOne, setSectionOne] = useState('')
@@ -136,6 +138,7 @@ export function SessionForm() {
         const session = res.data
         setTitle(session.title || '')
         setSlug(session.slug || '')
+        setVideoUrl(session.video_url || '')
 
         const catName = getCategoryName(session.category)
         setCategory(catName)
@@ -291,6 +294,7 @@ export function SessionForm() {
         formData.append('instructor_id', '')
       }
 
+      formData.append('video_url', videoUrl.trim())
       formData.append('section_one_content', sectionOne)
       formData.append('section_two_content', sectionTwo)
       formData.append('is_featured', '0')
@@ -475,10 +479,27 @@ export function SessionForm() {
                     <Input
                       id='slug'
                       placeholder='e.g., cloud-computing-masterclass'
+
                       value={slug}
                       onChange={(e) => setSlug(e.target.value)}
                     />
                   </div>
+                </div>
+
+                <div className='space-y-2 pt-1'>
+                  <Label htmlFor='videoUrl' className='text-sm font-medium flex items-center gap-2'>
+                    <Video className='size-4 text-primary' />
+                    Live Stream / Video Recording URL
+                  </Label>
+                  <Input
+                    id='videoUrl'
+                    placeholder='e.g., https://meet.google.com/abc-defg-hij or https://youtube.com/watch?v=... or Zoom link'
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                  />
+                  <p className='text-xs text-muted-foreground'>
+                    Video or live stream URL accessible to enrolled students and app developers.
+                  </p>
                 </div>
               </CardContent>
             </Card>

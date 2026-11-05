@@ -1,5 +1,5 @@
-import { type InstructorItem } from './admin-instructors'
 import { apiClient } from '@/lib/api-client'
+import { type InstructorItem } from './admin-instructors'
 
 export interface SessionImageItem {
   id: number
@@ -46,8 +46,16 @@ export interface SessionItem {
   is_active: boolean
   image_url?: string | null
   short_description?: string
+  video_url?: string | null
   images?: SessionImageItem[]
-  resource?: { id: number; title: string; file_name: string; file_size?: string; file_url?: string; is_active: boolean } | null
+  resource?: {
+    id: number
+    title: string
+    file_name: string
+    file_size?: string
+    file_url?: string
+    is_active: boolean
+  } | null
   created_at?: string
   updated_at?: string
 }
@@ -144,8 +152,14 @@ export const adminSessionService = {
 
   async bulkDeleteSessions(
     ids: number[]
-  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
-    const response = await apiClient.post('/admin/sessions/bulk-delete', { ids })
+  ): Promise<{
+    status: boolean
+    message: string
+    data?: { deleted_count: number }
+  }> {
+    const response = await apiClient.post('/admin/sessions/bulk-delete', {
+      ids,
+    })
     return response.data
   },
 

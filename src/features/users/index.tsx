@@ -274,9 +274,20 @@ export function Users() {
 
                       {/* Email */}
                       <TableCell className='py-3'>
-                        <div className='flex items-center gap-1.5 text-sm'>
+                        <div className='flex items-center gap-1.5 text-sm flex-wrap'>
                           <Mail className='size-3.5 text-primary shrink-0' />
                           <span className='truncate font-mono text-xs text-foreground font-medium'>{item.email}</span>
+                          {(item.auth_provider === 'google' || item.google_id) && (
+                            <Badge variant='outline' className='py-0 px-1 text-[10px] font-medium border-blue-500/30 bg-blue-500/10 text-blue-500 gap-1'>
+                              <svg className='size-2.5' viewBox='0 0 24 24'>
+                                <path fill='#4285F4' d='M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z'/>
+                                <path fill='#34A853' d='M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z'/>
+                                <path fill='#FBBC05' d='M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z'/>
+                                <path fill='#EA4335' d='M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z'/>
+                              </svg>
+                              Google
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
 
@@ -295,10 +306,17 @@ export function Users() {
 
                       {/* Password Column */}
                       <TableCell className='py-3'>
-                        <span className='font-mono text-xs text-muted-foreground tracking-wider flex items-center gap-1.5'>
-                          <ShieldCheck className='size-3 text-emerald-500' />
-                          Hashed & Protected
-                        </span>
+                        {item.auth_provider === 'google' || item.google_id ? (
+                          <span className='font-mono text-xs text-blue-500 tracking-normal flex items-center gap-1.5'>
+                            <ShieldCheck className='size-3 text-blue-500' />
+                            Google Account
+                          </span>
+                        ) : (
+                          <span className='font-mono text-xs text-muted-foreground tracking-wider flex items-center gap-1.5'>
+                            <ShieldCheck className='size-3 text-emerald-500' />
+                            Hashed & Protected
+                          </span>
+                        )}
                       </TableCell>
 
                       {/* Resume Column */}
@@ -449,6 +467,25 @@ export function Users() {
                   </div>
 
 
+                  {/* Sign-in Method */}
+                  <div className='flex items-start gap-2.5 p-2.5 rounded-md border bg-muted/10'>
+                    <ShieldCheck className='h-4 w-4 text-muted-foreground mt-0.5 shrink-0' />
+                    <div className='min-w-0 flex-1'>
+                      <div className='text-xs font-medium text-muted-foreground'>Sign-in Method</div>
+                      <div className='text-xs font-medium truncate mt-0.5 flex items-center gap-1.5'>
+                        {viewItem.auth_provider === 'google' || viewItem.google_id ? (
+                          <Badge variant='outline' className='py-0.5 px-2 text-xs font-medium border-blue-500/30 bg-blue-500/10 text-blue-500 gap-1.5'>
+                            Google OAuth 2.0 (Verified)
+                          </Badge>
+                        ) : (
+                          <Badge variant='outline' className='py-0.5 px-2 text-xs font-medium text-muted-foreground'>
+                            Email & Password
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Password */}
                   <div className='flex items-start gap-2.5 p-2.5 rounded-md border bg-muted/10'>
                     <Key className='h-4 w-4 text-muted-foreground mt-0.5 shrink-0' />
@@ -456,7 +493,7 @@ export function Users() {
                       <div className='text-xs font-medium text-muted-foreground'>Account Password</div>
                       <div className='font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate mt-0.5 flex items-center gap-1.5'>
                         <ShieldCheck className='size-3.5' />
-                        Hashed with Bcrypt (One-Way Security)
+                        {viewItem.auth_provider === 'google' || viewItem.google_id ? 'Google Account Secured' : 'Hashed with Bcrypt (One-Way Security)'}
                       </div>
                     </div>
                   </div>

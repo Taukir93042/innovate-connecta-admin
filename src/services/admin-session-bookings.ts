@@ -10,6 +10,11 @@ export interface SessionBookingItem {
   institute: string
   course: string
   semester: string
+  order_id?: string | null
+  amount?: number | string | null
+  payment_method?: string | null
+  payment_status?: string | null
+  transaction_id?: string | null
   status: 'pending' | 'confirmed' | 'cancelled' | string
   notes?: string | null
   expectations?: string | null

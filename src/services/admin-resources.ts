@@ -12,6 +12,7 @@ export interface ResourceItem {
   file_size?: string | null
   file_type?: string | null
   description?: string | null
+  video_url?: string | null
   download_count: number
   is_active: boolean
   order_column: number
@@ -62,21 +63,25 @@ export const adminResourceService = {
     return res.data
   },
 
-  async getResource(id: number): Promise<{ status: boolean; data: ResourceItem }> {
+  async getResource(
+    id: number
+  ): Promise<{ status: boolean; data: ResourceItem }> {
     const res = await apiClient.get<{ status: boolean; data: ResourceItem }>(
       `/admin/resources/${id}`
     )
     return res.data
   },
 
-  async createResource(formData: FormData): Promise<{ status: boolean; message: string; data: ResourceItem }> {
-    const res = await apiClient.post<{ status: boolean; message: string; data: ResourceItem }>(
-      '/admin/resources',
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    )
+  async createResource(
+    formData: FormData
+  ): Promise<{ status: boolean; message: string; data: ResourceItem }> {
+    const res = await apiClient.post<{
+      status: boolean
+      message: string
+      data: ResourceItem
+    }>('/admin/resources', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
     return res.data
   },
 
@@ -84,17 +89,19 @@ export const adminResourceService = {
     id: number,
     formData: FormData
   ): Promise<{ status: boolean; message: string; data: ResourceItem }> {
-    const res = await apiClient.post<{ status: boolean; message: string; data: ResourceItem }>(
-      `/admin/resources/${id}`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    )
+    const res = await apiClient.post<{
+      status: boolean
+      message: string
+      data: ResourceItem
+    }>(`/admin/resources/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
     return res.data
   },
 
-  async deleteResource(id: number): Promise<{ status: boolean; message: string }> {
+  async deleteResource(
+    id: number
+  ): Promise<{ status: boolean; message: string }> {
     const res = await apiClient.delete<{ status: boolean; message: string }>(
       `/admin/resources/${id}`
     )
@@ -103,7 +110,11 @@ export const adminResourceService = {
 
   async bulkDeleteResources(
     ids: number[]
-  ): Promise<{ status: boolean; message: string; data?: { deleted_count: number } }> {
+  ): Promise<{
+    status: boolean
+    message: string
+    data?: { deleted_count: number }
+  }> {
     const res = await apiClient.post<{
       status: boolean
       message: string
@@ -114,7 +125,11 @@ export const adminResourceService = {
 
   async toggleResourceStatus(
     id: number
-  ): Promise<{ status: boolean; message: string; data: { id: number; is_active: boolean } }> {
+  ): Promise<{
+    status: boolean
+    message: string
+    data: { id: number; is_active: boolean }
+  }> {
     const res = await apiClient.patch<{
       status: boolean
       message: string
@@ -124,12 +139,12 @@ export const adminResourceService = {
   },
 }
 
-
 export interface ResourceSectionItem {
   id: number
   recorded_session_id: number
   title: string
   description?: string | null
+  video_url?: string | null
   sort_order: number
   is_active: boolean
   total_files?: number
@@ -150,7 +165,9 @@ export const adminResourceSectionService = {
     data: ResourceSectionItem[]
     session: { id: number; title: string; slug: string }
   }> {
-    const res = await apiClient.get(`/admin/recorded-sessions/${recordedSessionId}/resource-sections`)
+    const res = await apiClient.get(
+      `/admin/recorded-sessions/${recordedSessionId}/resource-sections`
+    )
     return res.data
   },
 
@@ -158,6 +175,7 @@ export const adminResourceSectionService = {
     recorded_session_id: number
     title: string
     description?: string
+    video_url?: string
     sort_order?: number
     is_active?: boolean
   }): Promise<{ status: boolean; message: string; data: ResourceSectionItem }> {
@@ -170,6 +188,7 @@ export const adminResourceSectionService = {
     data: {
       title?: string
       description?: string
+      video_url?: string
       sort_order?: number
       is_active?: boolean
     }
@@ -178,20 +197,32 @@ export const adminResourceSectionService = {
     return res.data
   },
 
-  async deleteSection(id: number): Promise<{ status: boolean; message: string }> {
+  async deleteSection(
+    id: number
+  ): Promise<{ status: boolean; message: string }> {
     const res = await apiClient.delete(`/admin/resource-sections/${id}`)
     return res.data
   },
 
   async toggleSectionStatus(
     id: number
-  ): Promise<{ status: boolean; message: string; data: { id: number; is_active: boolean } }> {
-    const res = await apiClient.patch(`/admin/resource-sections/${id}/toggle-status`)
+  ): Promise<{
+    status: boolean
+    message: string
+    data: { id: number; is_active: boolean }
+  }> {
+    const res = await apiClient.patch(
+      `/admin/resource-sections/${id}/toggle-status`
+    )
     return res.data
   },
 
-  async reorderSections(ids: number[]): Promise<{ status: boolean; message: string }> {
-    const res = await apiClient.post('/admin/resource-sections/reorder', { ids })
+  async reorderSections(
+    ids: number[]
+  ): Promise<{ status: boolean; message: string }> {
+    const res = await apiClient.post('/admin/resource-sections/reorder', {
+      ids,
+    })
     return res.data
   },
 }

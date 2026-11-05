@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
+  adminSessionBookingService,
+  type SessionBookingItem,
+} from '@/services/admin-session-bookings'
+import {
   Search as SearchIcon,
   Trash2,
   Eye,
@@ -20,28 +24,10 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  adminSessionBookingService,
-  type SessionBookingItem,
-} from '@/services/admin-session-bookings'
 import { getApiErrorMessage } from '@/lib/api-client'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -50,6 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -57,7 +44,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 
 export function SessionBookings() {
   const [bookings, setBookings] = useState<SessionBookingItem[]>([])
@@ -140,7 +140,9 @@ export function SessionBookings() {
       if (res.status) {
         toast.success(`Booking status updated to ${newStatus}`)
         setBookings((prev) =>
-          prev.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
+          prev.map((b) =>
+            b.id === bookingId ? { ...b, status: newStatus } : b
+          )
         )
         if (viewItem && viewItem.id === bookingId) {
           setViewItem({ ...viewItem, status: newStatus })
@@ -179,7 +181,8 @@ export function SessionBookings() {
     if (selectedIds.length === 0) return
     try {
       setIsBulkDeleting(true)
-      const res = await adminSessionBookingService.bulkDeleteBookings(selectedIds)
+      const res =
+        await adminSessionBookingService.bulkDeleteBookings(selectedIds)
       if (res.status) {
         toast.success(res.message || 'Selected bookings deleted successfully')
         setSelectedIds([])
@@ -218,19 +221,19 @@ export function SessionBookings() {
     switch (status?.toLowerCase()) {
       case 'confirmed':
         return (
-          <Badge className='bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1 font-medium'>
+          <Badge className='gap-1 border-emerald-500/30 bg-emerald-500/15 font-medium text-emerald-600 dark:text-emerald-400'>
             <CheckCircle2 className='size-3' /> Confirmed
           </Badge>
         )
       case 'cancelled':
         return (
-          <Badge className='bg-destructive/15 text-destructive border-destructive/30 gap-1 font-medium'>
+          <Badge className='gap-1 border-destructive/30 bg-destructive/15 font-medium text-destructive'>
             <XCircle className='size-3' /> Cancelled
           </Badge>
         )
       default:
         return (
-          <Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 font-medium'>
+          <Badge className='gap-1 border-amber-500/30 bg-amber-500/15 font-medium text-amber-600 dark:text-amber-400'>
             <Clock className='size-3' /> Pending
           </Badge>
         )
@@ -267,12 +270,13 @@ export function SessionBookings() {
         {/* Top title and counts */}
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <div>
-            <h1 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
+            <h1 className='flex items-center gap-2 text-2xl font-bold tracking-tight'>
               <CalendarCheck className='size-6 text-primary' />
               Seat Bookings &amp; Registrations
             </h1>
             <p className='text-sm text-muted-foreground'>
-              Manage student reservations and seat bookings submitted for live &amp; upcoming sessions.
+              Manage student reservations and seat bookings submitted for live
+              &amp; upcoming sessions.
             </p>
           </div>
         </div>
@@ -281,10 +285,10 @@ export function SessionBookings() {
         <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <form
             onSubmit={handleSearchSubmit}
-            className='flex items-center gap-2 flex-1 max-w-md'
+            className='flex max-w-md flex-1 items-center gap-2'
           >
             <div className='relative flex-1'>
-              <SearchIcon className='absolute left-2.5 top-2.5 size-4 text-muted-foreground' />
+              <SearchIcon className='absolute top-2.5 left-2.5 size-4 text-muted-foreground' />
               <Input
                 placeholder='Search student name, email, phone, college...'
                 className='pl-8'
@@ -297,7 +301,7 @@ export function SessionBookings() {
             </Button>
           </form>
 
-          <div className='flex items-center gap-2 flex-wrap'>
+          <div className='flex flex-wrap items-center gap-2'>
             <div className='flex items-center gap-1.5'>
               <Filter className='size-4 text-muted-foreground' />
               <Select
@@ -307,7 +311,7 @@ export function SessionBookings() {
                   setCurrentPage(1)
                 }}
               >
-                <SelectTrigger className='w-[140px] h-9 text-xs'>
+                <SelectTrigger className='h-9 w-[140px] text-xs'>
                   <SelectValue placeholder='Filter Status' />
                 </SelectTrigger>
                 <SelectContent>
@@ -326,7 +330,8 @@ export function SessionBookings() {
                 onClick={() => setIsBulkDeletingOpen(true)}
                 className='h-9 gap-1.5'
               >
-                <Trash2 className='size-3.5' /> Delete Selected ({selectedIds.length})
+                <Trash2 className='size-3.5' /> Delete Selected (
+                {selectedIds.length})
               </Button>
             )}
           </div>
@@ -334,18 +339,20 @@ export function SessionBookings() {
 
         {/* Table content */}
         {isLoading ? (
-          <div className='flex flex-col items-center justify-center min-h-[300px] gap-2 rounded-lg border bg-card'>
+          <div className='flex min-h-[300px] flex-col items-center justify-center gap-2 rounded-lg border bg-card'>
             <Loader2 className='size-8 animate-spin text-primary' />
-            <span className='text-sm text-muted-foreground'>Loading seat bookings...</span>
+            <span className='text-sm text-muted-foreground'>
+              Loading seat bookings...
+            </span>
           </div>
         ) : bookings.length === 0 ? (
-          <div className='flex flex-col items-center justify-center min-h-[300px] gap-3 rounded-lg border border-dashed p-8 text-center bg-card'>
+          <div className='flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-card p-8 text-center'>
             <div className='flex size-12 items-center justify-center rounded-full bg-muted'>
               <Inbox className='size-6 text-muted-foreground' />
             </div>
             <div className='space-y-1'>
-              <h3 className='font-semibold text-lg'>No Seat Bookings Found</h3>
-              <p className='text-sm text-muted-foreground max-w-sm'>
+              <h3 className='text-lg font-semibold'>No Seat Bookings Found</h3>
+              <p className='max-w-sm text-sm text-muted-foreground'>
                 {searchQuery || statusFilter !== 'all'
                   ? 'No reservations matched your filter criteria. Try clearing search.'
                   : 'New student registrations submitted through session reserve modal will appear here.'}
@@ -353,7 +360,7 @@ export function SessionBookings() {
             </div>
           </div>
         ) : (
-          <div className='rounded-lg border bg-card shadow-sm overflow-hidden'>
+          <div className='overflow-hidden rounded-lg border bg-card shadow-sm'>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -367,8 +374,10 @@ export function SessionBookings() {
                   <TableHead>Student Details</TableHead>
                   <TableHead>Session Name</TableHead>
                   <TableHead>Academic Info</TableHead>
+                  <TableHead>Payment & Fee</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Booked At</TableHead>
+                  <TableHead>Transaction ID</TableHead>
                   <TableHead className='text-end'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -376,11 +385,16 @@ export function SessionBookings() {
                 {bookings.map((item) => {
                   const isChecked = selectedIds.includes(item.id)
                   return (
-                    <TableRow key={item.id} data-state={isChecked ? 'selected' : undefined}>
+                    <TableRow
+                      key={item.id}
+                      data-state={isChecked ? 'selected' : undefined}
+                    >
                       <TableCell className='px-3'>
                         <Checkbox
                           checked={isChecked}
-                          onCheckedChange={(val) => handleSelectOne(item.id, !!val)}
+                          onCheckedChange={(val) =>
+                            handleSelectOne(item.id, !!val)
+                          }
                           aria-label={`Select ${item.name}`}
                         />
                       </TableCell>
@@ -388,18 +402,24 @@ export function SessionBookings() {
                       {/* Student Details */}
                       <TableCell className='py-3'>
                         <div className='flex flex-col gap-0.5'>
-                          <span className='font-semibold text-sm text-foreground'>
+                          <span className='text-sm font-semibold text-foreground'>
                             {item.name}
                           </span>
                           <span className='flex items-center gap-1 text-xs text-muted-foreground'>
-                            <Mail className='size-3 text-muted-foreground/70 shrink-0' />
-                            <a href={`mailto:${item.email}`} className='hover:underline'>
+                            <Mail className='size-3 shrink-0 text-muted-foreground/70' />
+                            <a
+                              href={`mailto:${item.email}`}
+                              className='hover:underline'
+                            >
                               {item.email}
                             </a>
                           </span>
                           <span className='flex items-center gap-1 text-xs text-muted-foreground'>
-                            <Phone className='size-3 text-muted-foreground/70 shrink-0' />
-                            <a href={`tel:${item.phone}`} className='hover:underline'>
+                            <Phone className='size-3 shrink-0 text-muted-foreground/70' />
+                            <a
+                              href={`tel:${item.phone}`}
+                              className='hover:underline'
+                            >
                               {item.phone}
                             </a>
                           </span>
@@ -408,12 +428,21 @@ export function SessionBookings() {
 
                       {/* Session Name */}
                       <TableCell className='py-3'>
-                        <div className='flex flex-col gap-0.5 max-w-[200px]'>
-                          <span className='font-medium text-xs text-primary truncate' title={item.session_title || item.session?.title || 'Session'}>
-                            {item.session_title || item.session?.title || 'Live Session'}
+                        <div className='flex max-w-[200px] flex-col gap-0.5'>
+                          <span
+                            className='truncate text-xs font-medium text-primary'
+                            title={
+                              item.session_title ||
+                              item.session?.title ||
+                              'Session'
+                            }
+                          >
+                            {item.session_title ||
+                              item.session?.title ||
+                              'Live Session'}
                           </span>
                           {item.session?.slug && (
-                            <span className='text-[11px] text-muted-foreground truncate'>
+                            <span className='truncate text-[11px] text-muted-foreground'>
                               /live-sessions/{item.session.slug}
                             </span>
                           )}
@@ -422,19 +451,44 @@ export function SessionBookings() {
 
                       {/* Academic Info */}
                       <TableCell className='py-3'>
-                        <div className='flex flex-col gap-0.5 max-w-[220px] text-xs text-foreground/90'>
-                          <span className='flex items-center gap-1 truncate' title={item.institute}>
-                            <Building2 className='size-3 text-muted-foreground/70 shrink-0' />
+                        <div className='flex max-w-[220px] flex-col gap-0.5 text-xs text-foreground/90'>
+                          <span
+                            className='flex items-center gap-1 truncate'
+                            title={item.institute}
+                          >
+                            <Building2 className='size-3 shrink-0 text-muted-foreground/70' />
                             <span className='truncate'>{item.institute}</span>
                           </span>
-                          <span className='flex items-center gap-1 truncate text-muted-foreground' title={item.course}>
-                            <BookOpen className='size-3 text-muted-foreground/70 shrink-0' />
+                          <span
+                            className='flex items-center gap-1 truncate text-muted-foreground'
+                            title={item.course}
+                          >
+                            <BookOpen className='size-3 shrink-0 text-muted-foreground/70' />
                             <span className='truncate'>{item.course}</span>
                           </span>
                           <span className='flex items-center gap-1 text-[11px] text-muted-foreground'>
-                            <GraduationCap className='size-3 text-muted-foreground/70 shrink-0' />
+                            <GraduationCap className='size-3 shrink-0 text-muted-foreground/70' />
                             <span>{item.semester}</span>
                           </span>
+                        </div>
+                      </TableCell>
+
+                      {/* Payment & Fee */}
+                      <TableCell className='py-3'>
+                        <div className='flex flex-col gap-0.5 text-xs'>
+                          <span className='font-bold text-emerald-500'>
+                            {item.amount ? `₹${item.amount}` : '₹49.00'}
+                          </span>
+                          {item.payment_method && (
+                            <span className='max-w-[140px] truncate text-[11px] text-muted-foreground'>
+                              {item.payment_method}
+                            </span>
+                          )}
+                          {item.order_id && (
+                            <span className='font-mono text-[10px] text-muted-foreground/70'>
+                              {item.order_id}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
 
@@ -443,16 +497,22 @@ export function SessionBookings() {
                         <div className='flex items-center gap-2'>
                           <Select
                             value={item.status || 'pending'}
-                            onValueChange={(val: any) => handleStatusChange(item.id, val)}
+                            onValueChange={(val: any) =>
+                              handleStatusChange(item.id, val)
+                            }
                             disabled={isUpdatingStatus}
                           >
-                            <SelectTrigger className='w-[125px] h-8 text-xs border-0 bg-transparent p-0 shadow-none'>
+                            <SelectTrigger className='h-8 w-[125px] border-0 bg-transparent p-0 text-xs shadow-none'>
                               {getStatusBadge(item.status)}
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value='pending'>Pending</SelectItem>
-                              <SelectItem value='confirmed'>Confirmed</SelectItem>
-                              <SelectItem value='cancelled'>Cancelled</SelectItem>
+                              <SelectItem value='confirmed'>
+                                Confirmed
+                              </SelectItem>
+                              <SelectItem value='cancelled'>
+                                Cancelled
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -461,9 +521,20 @@ export function SessionBookings() {
                       {/* Date */}
                       <TableCell className='py-3 text-xs text-muted-foreground'>
                         <span className='flex items-center gap-1 whitespace-nowrap'>
-                          <Calendar className='size-3 text-muted-foreground/70 shrink-0' />
+                          <Calendar className='size-3 shrink-0 text-muted-foreground/70' />
                           {formatDate(item.created_at)}
                         </span>
+                      </TableCell>
+
+                      {/* Transaction ID */}
+                      <TableCell className='py-3 text-xs'>
+                        {item.transaction_id ? (
+                          <span className='rounded border border-border/50 bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground'>
+                            {item.transaction_id}
+                          </span>
+                        ) : (
+                          <span className='text-xs text-muted-foreground/40'>-</span>
+                        )}
                       </TableCell>
 
                       {/* Actions */}
@@ -481,7 +552,7 @@ export function SessionBookings() {
                           <Button
                             variant='ghost'
                             size='icon'
-                            className='size-8 text-destructive hover:text-destructive hover:bg-destructive/10'
+                            className='size-8 text-destructive hover:bg-destructive/10 hover:text-destructive'
                             onClick={() => setDeleteItem(item)}
                             title='Delete booking'
                           >
@@ -496,9 +567,10 @@ export function SessionBookings() {
             </Table>
 
             {/* Pagination Controls */}
-            <div className='flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-muted/20 text-xs text-muted-foreground'>
+            <div className='flex flex-col items-center justify-between gap-4 border-t bg-muted/20 p-4 text-xs text-muted-foreground sm:flex-row'>
               <div>
-                Showing <strong>{bookings.length}</strong> of <strong>{totalCount}</strong> reservations
+                Showing <strong>{bookings.length}</strong> of{' '}
+                <strong>{totalCount}</strong> reservations
               </div>
               <div className='flex items-center gap-2'>
                 <Button
@@ -511,12 +583,15 @@ export function SessionBookings() {
                   <ChevronLeft className='size-3.5' /> Previous
                 </Button>
                 <span>
-                  Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                  Page <strong>{currentPage}</strong> of{' '}
+                  <strong>{totalPages}</strong>
                 </span>
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage >= totalPages || isLoading}
                   className='h-8 gap-1'
                 >
@@ -529,14 +604,19 @@ export function SessionBookings() {
       </Main>
 
       {/* View Detail Modal */}
-      <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
+      <Dialog
+        open={!!viewItem}
+        onOpenChange={(open) => !open && setViewItem(null)}
+      >
         <DialogContent className='sm:max-w-lg'>
           {viewItem && (
             <>
               <DialogHeader>
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-2'>
-                    <DialogTitle className='text-lg'>Reservation Details</DialogTitle>
+                    <DialogTitle className='text-lg'>
+                      Reservation Details
+                    </DialogTitle>
                     {getStatusBadge(viewItem.status)}
                   </div>
                 </div>
@@ -548,29 +628,31 @@ export function SessionBookings() {
               <div className='grid gap-4 py-3'>
                 {/* Session title banner */}
                 <div className='rounded-lg border bg-primary/5 p-3'>
-                  <span className='text-[11px] font-medium text-primary uppercase tracking-wider block mb-1'>
+                  <span className='mb-1 block text-[11px] font-medium tracking-wider text-primary uppercase'>
                     Target Session
                   </span>
-                  <p className='font-bold text-sm text-foreground'>
-                    {viewItem.session_title || viewItem.session?.title || 'Live Session'}
+                  <p className='text-sm font-bold text-foreground'>
+                    {viewItem.session_title ||
+                      viewItem.session?.title ||
+                      'Live Session'}
                   </p>
                 </div>
 
                 <div className='grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-3'>
                   <div>
-                    <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                       Full Name
                     </span>
-                    <p className='font-semibold text-sm'>{viewItem.name}</p>
+                    <p className='text-sm font-semibold'>{viewItem.name}</p>
                   </div>
                   <div>
-                    <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                       Phone / WhatsApp
                     </span>
                     <p className='font-mono text-xs'>{viewItem.phone}</p>
                   </div>
                   <div className='col-span-2'>
-                    <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                       Email Address
                     </span>
                     <p className='font-mono text-xs'>{viewItem.email}</p>
@@ -579,55 +661,109 @@ export function SessionBookings() {
 
                 <div className='grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-3'>
                   <div className='col-span-2'>
-                    <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                       College / Institute
                     </span>
                     <p className='text-xs font-medium'>{viewItem.institute}</p>
                   </div>
                   <div>
-                    <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                       Course / Field
                     </span>
                     <p className='text-xs font-medium'>{viewItem.course}</p>
                   </div>
                   <div>
-                    <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                       Year / Semester
                     </span>
                     <p className='text-xs font-medium'>{viewItem.semester}</p>
                   </div>
 
                   {(viewItem.expectations || viewItem.notes) && (
-                    <div className='col-span-2 pt-2 border-t'>
-                      <span className='text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-1'>
+                    <div className='col-span-2 border-t pt-2'>
+                      <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
                         Career Goals &amp; Expectations
                       </span>
-                      <p className='text-xs whitespace-pre-wrap rounded-md bg-background/60 p-2.5 border text-foreground'>
+                      <p className='rounded-md border bg-background/60 p-2.5 text-xs whitespace-pre-wrap text-foreground'>
                         {viewItem.expectations || viewItem.notes}
                       </p>
                     </div>
                   )}
                 </div>
 
+                {/* Payment & Order Info */}
+                {(viewItem.amount ||
+                  viewItem.payment_method ||
+                  viewItem.order_id) && (
+                  <div className='grid grid-cols-2 gap-3 rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-3'>
+                    <div>
+                      <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
+                        Fee Paid
+                      </span>
+                      <p className='text-sm font-bold text-emerald-400'>
+                        {viewItem.amount ? `₹${viewItem.amount}` : 'Paid'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
+                        Payment Method
+                      </span>
+                      <p className='text-xs font-medium text-foreground'>
+                        {viewItem.payment_method || 'Online'}
+                      </p>
+                    </div>
+                    {viewItem.order_id && (
+                      <div>
+                        <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
+                          Order ID
+                        </span>
+                        <p className='font-mono text-xs text-muted-foreground'>
+                          {viewItem.order_id}
+                        </p>
+                      </div>
+                    )}
+                    {viewItem.transaction_id && (
+                      <div>
+                        <span className='mb-1 block text-[11px] font-medium tracking-wider text-muted-foreground uppercase'>
+                          Transaction ID
+                        </span>
+                        <p className='font-mono text-xs text-muted-foreground'>
+                          {viewItem.transaction_id}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Change Status in Modal */}
-                <div className='flex items-center justify-between rounded-lg border p-3 bg-card'>
+                <div className='flex items-center justify-between rounded-lg border bg-card p-3'>
                   <span className='text-xs font-medium text-muted-foreground'>
                     Update Status:
                   </span>
                   <div className='flex items-center gap-2'>
                     <Button
                       size='sm'
-                      variant={viewItem.status === 'confirmed' ? 'default' : 'outline'}
+                      variant={
+                        viewItem.status === 'confirmed' ? 'default' : 'outline'
+                      }
                       className='h-8 text-xs'
-                      onClick={() => handleStatusChange(viewItem.id, 'confirmed')}
+                      onClick={() =>
+                        handleStatusChange(viewItem.id, 'confirmed')
+                      }
                     >
                       Mark Confirmed
                     </Button>
                     <Button
                       size='sm'
-                      variant={viewItem.status === 'cancelled' ? 'destructive' : 'outline'}
+                      variant={
+                        viewItem.status === 'cancelled'
+                          ? 'destructive'
+                          : 'outline'
+                      }
                       className='h-8 text-xs'
-                      onClick={() => handleStatusChange(viewItem.id, 'cancelled')}
+                      onClick={() =>
+                        handleStatusChange(viewItem.id, 'cancelled')
+                      }
                     >
                       Mark Cancelled
                     </Button>
@@ -686,4 +822,3 @@ export function SessionBookings() {
     </>
   )
 }
-

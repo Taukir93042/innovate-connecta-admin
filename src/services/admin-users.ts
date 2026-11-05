@@ -4,6 +4,8 @@ export interface UserItem {
   id: number
   name: string
   email: string
+  google_id?: string | null
+  auth_provider?: string | null
   phone?: string | null
   field?: string | null
   avatar?: string | null
