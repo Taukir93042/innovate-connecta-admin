@@ -441,6 +441,21 @@ export function RecordedSessions() {
                               params: { recordedSessionId: String(session.id) },
                             })
                           }
+                          title='Manage Video Lessons & Curriculum'
+                          className='text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10'
+                        >
+                          <Video className='h-4 w-4' />
+                        </Button>
+
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          onClick={() =>
+                            navigate({
+                              to: '/recorded-sessions/$recordedSessionId',
+                              params: { recordedSessionId: String(session.id) },
+                            })
+                          }
                           title='View Course Details Page'
                         >
                           <Eye className='h-4 w-4 text-muted-foreground' />
