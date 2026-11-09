@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
 import {
+  adminRecordedSessionService,
+  type RecordedSessionItem,
+} from '@/services/admin-recorded-sessions'
+import {
+  adminResourceService,
+  adminResourceSectionService,
+  type ResourceItem,
+  type ResourceSectionItem,
+} from '@/services/admin-resources'
+import {
   Plus,
   Search as SearchIcon,
   Edit2,
@@ -9,47 +19,13 @@ import {
   FolderOpen,
   FileText,
   Download,
-
   Layers,
   Video,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  adminResourceService,
-  adminResourceSectionService,
-  type ResourceItem,
-  type ResourceSectionItem,
-} from '@/services/admin-resources'
-import {
-  adminRecordedSessionService,
-  type RecordedSessionItem,
-} from '@/services/admin-recorded-sessions'
 import { getApiErrorMessage } from '@/lib/api-client'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -58,8 +34,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
 import { PaginationBar } from '@/components/pagination-bar'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 
 const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024 // 20 MB
 
@@ -69,7 +68,9 @@ export function Resources() {
 
 export function ResourcesFeature() {
   const [resources, setResources] = useState<ResourceItem[]>([])
-  const [recordedSessions, setRecordedSessions] = useState<RecordedSessionItem[]>([])
+  const [recordedSessions, setRecordedSessions] = useState<
+    RecordedSessionItem[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string>('all')
@@ -96,9 +97,13 @@ export function ResourcesFeature() {
   const [formTitle, setFormTitle] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
   const [resourceFile, setResourceFile] = useState<File | null>(null)
-  const [formResourceType, setFormResourceType] = useState<'pdf' | 'video'>('pdf')
+  const [formResourceType, setFormResourceType] = useState<'pdf' | 'video'>(
+    'pdf'
+  )
   const [formVideoUrl, setFormVideoUrl] = useState('')
-  const [formAvailableSections, setFormAvailableSections] = useState<ResourceSectionItem[]>([])
+  const [formAvailableSections, setFormAvailableSections] = useState<
+    ResourceSectionItem[]
+  >([])
   const [loadingFormSections, setLoadingFormSections] = useState(false)
 
   // Section Management Dialog state
@@ -117,7 +122,9 @@ export function ResourcesFeature() {
 
   const fetchRecordedSessions = async () => {
     try {
-      const res = await adminRecordedSessionService.getRecordedSessions({ per_page: 100 })
+      const res = await adminRecordedSessionService.getRecordedSessions({
+        per_page: 100,
+      })
       if (res?.data) {
         setRecordedSessions(res.data)
       }
@@ -178,7 +185,9 @@ export function ResourcesFeature() {
     }
     try {
       setLoadingFormSections(true)
-      const res = await adminResourceSectionService.getSections(Number(sessionId))
+      const res = await adminResourceSectionService.getSections(
+        Number(sessionId)
+      )
       if (res.status && Array.isArray(res.data)) {
         setFormAvailableSections(res.data)
       }
@@ -191,7 +200,9 @@ export function ResourcesFeature() {
 
   const handleOpenCreateModal = () => {
     setEditingItem(null)
-    setFormRecordedSessionId(selectedSessionId !== 'all' ? selectedSessionId : '')
+    setFormRecordedSessionId(
+      selectedSessionId !== 'all' ? selectedSessionId : ''
+    )
     setFormSectionId('none')
     setFormTitle('')
     setFormIsActive(true)
@@ -208,13 +219,21 @@ export function ResourcesFeature() {
 
   const handleOpenEditModal = (item: ResourceItem) => {
     setEditingItem(item)
-    const recId = item.recorded_session_id ? String(item.recorded_session_id) : ''
+    const recId = item.recorded_session_id
+      ? String(item.recorded_session_id)
+      : ''
     setFormRecordedSessionId(recId)
-    setFormSectionId(item.resource_section_id ? String(item.resource_section_id) : 'none')
+    setFormSectionId(
+      item.resource_section_id ? String(item.resource_section_id) : 'none'
+    )
     setFormTitle(item.title)
     setFormIsActive(item.is_active)
     setResourceFile(null)
-    if (item.file_type === 'video' || item.file_size === 'Video' || item.file_path?.startsWith('http')) {
+    if (
+      item.file_type === 'video' ||
+      item.file_size === 'Video' ||
+      item.file_path?.startsWith('http')
+    ) {
       setFormResourceType('video')
       setFormVideoUrl(item.file_path || '')
     } else {
@@ -235,7 +254,9 @@ export function ResourcesFeature() {
     setFormSectionId('none')
     if (sessionId) {
       loadSectionsForSession(sessionId)
-      const selectedSession = recordedSessions.find((s) => String(s.id) === sessionId)
+      const selectedSession = recordedSessions.find(
+        (s) => String(s.id) === sessionId
+      )
       if (selectedSession && (!formTitle || formTitle.trim() === '')) {
         setFormTitle(`${selectedSession.title} - PDF Notes`)
       }
@@ -247,7 +268,9 @@ export function ResourcesFeature() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      const isPdf =
+        file.type === 'application/pdf' ||
+        file.name.toLowerCase().endsWith('.pdf')
       if (!isPdf) {
         toast.error('Only PDF files (.pdf) are allowed.')
         e.target.value = ''
@@ -255,7 +278,9 @@ export function ResourcesFeature() {
         return
       }
       if (file.size > MAX_PDF_SIZE_BYTES) {
-        toast.error('PDF file size exceeds 20 MB limit. Please select a smaller PDF.')
+        toast.error(
+          'PDF file size exceeds 20 MB limit. Please select a smaller PDF.'
+        )
         e.target.value = ''
         setResourceFile(null)
         return
@@ -269,7 +294,9 @@ export function ResourcesFeature() {
       const res = await adminResourceService.toggleResourceStatus(item.id)
       if (res.status) {
         setResources((prev) =>
-          prev.map((r) => (r.id === item.id ? { ...r, is_active: !r.is_active } : r))
+          prev.map((r) =>
+            r.id === item.id ? { ...r, is_active: !r.is_active } : r
+          )
         )
         toast.success(res.message || 'Status updated successfully')
       }
@@ -315,7 +342,10 @@ export function ResourcesFeature() {
       }
       formData.append('title', formTitle.trim())
       formData.append('resource_type', formResourceType)
-      formData.append('category', formResourceType === 'video' ? 'Video Lecture' : 'PDF Notes')
+      formData.append(
+        'category',
+        formResourceType === 'video' ? 'Video Lecture' : 'PDF Notes'
+      )
       formData.append('is_active', formIsActive ? '1' : '0')
 
       if (formResourceType === 'video') {
@@ -326,7 +356,10 @@ export function ResourcesFeature() {
 
       if (editingItem) {
         formData.append('_method', 'PUT')
-        const res = await adminResourceService.updateResource(editingItem.id, formData)
+        const res = await adminResourceService.updateResource(
+          editingItem.id,
+          formData
+        )
         if (res.status) {
           toast.success(res.message || 'Resource updated successfully')
           setIsFormOpen(false)
@@ -406,7 +439,9 @@ export function ResourcesFeature() {
     }
     try {
       setLoadingSections(true)
-      const res = await adminResourceSectionService.getSections(Number(sessionId))
+      const res = await adminResourceSectionService.getSections(
+        Number(sessionId)
+      )
       if (res.status && Array.isArray(res.data)) {
         setSections(res.data)
       }
@@ -493,7 +528,11 @@ export function ResourcesFeature() {
   }
 
   const handleDeleteSection = async (sectionId: number) => {
-    if (!confirm('Delete this section heading? PDF files under it will NOT be deleted; they will be kept as general resources.')) {
+    if (
+      !confirm(
+        'Delete this section heading? PDF files under it will NOT be deleted; they will be kept as general resources.'
+      )
+    ) {
       return
     }
     try {
@@ -525,11 +564,13 @@ export function ResourcesFeature() {
         {/* Page Title & Action Bar */}
         <div className='flex flex-wrap items-center justify-between gap-4'>
           <div>
-            <h1 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
-              <FolderOpen className='h-6 w-6 text-primary' /> Curriculum & Resources (Videos & PDFs)
+            <h1 className='flex items-center gap-2 text-2xl font-bold tracking-tight'>
+              <FolderOpen className='h-6 w-6 text-primary' /> Curriculum &
+              Resources (Videos & PDFs)
             </h1>
             <p className='text-sm text-muted-foreground'>
-              Manage curriculum sections, video lectures, and study PDFs for each recorded session.
+              Manage curriculum sections, video lectures, and study PDFs for
+              each recorded session.
             </p>
           </div>
 
@@ -556,16 +597,15 @@ export function ResourcesFeature() {
             </Button>
 
             <Button onClick={handleOpenCreateModal} className='gap-2 shadow-sm'>
-              <Plus className='h-4 w-4' />
-              + Add Resource (Video or PDF)
+              <Plus className='h-4 w-4' />+ Add Resource (Video or PDF)
             </Button>
           </div>
         </div>
 
         {/* Filter Bar */}
-        <div className='flex flex-wrap items-center gap-3 bg-card p-3.5 rounded-xl border shadow-sm'>
-          <div className='relative flex-1 min-w-[240px]'>
-            <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+        <div className='flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3.5 shadow-sm'>
+          <div className='relative min-w-[240px] flex-1'>
+            <SearchIcon className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
             <Input
               placeholder='Search by title, file name, session...'
               value={search}
@@ -575,7 +615,10 @@ export function ResourcesFeature() {
           </div>
 
           <div className='w-[280px]'>
-            <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+            <Select
+              value={selectedSessionId}
+              onValueChange={setSelectedSessionId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder='Filter By Session' />
               </SelectTrigger>
@@ -604,7 +647,7 @@ export function ResourcesFeature() {
         </div>
 
         {/* Table Card */}
-        <div className='border rounded-xl bg-card overflow-hidden shadow-sm'>
+        <div className='overflow-hidden rounded-xl border bg-card shadow-sm'>
           <Table>
             <TableHeader>
               <TableRow className='bg-muted/40'>
@@ -613,12 +656,15 @@ export function ResourcesFeature() {
                     type='checkbox'
                     className='rounded border-gray-300'
                     checked={
-                      resources.length > 0 && selectedIds.length === resources.length
+                      resources.length > 0 &&
+                      selectedIds.length === resources.length
                     }
                     onChange={(e) => handleSelectAll(e.target.checked)}
                   />
                 </TableHead>
-                <TableHead className='min-w-[260px]'>Resource Title &amp; PDF File</TableHead>
+                <TableHead className='min-w-[260px]'>
+                  Resource Title &amp; PDF File
+                </TableHead>
                 <TableHead>Section / Heading</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead className='text-center'>Status</TableHead>
@@ -640,9 +686,12 @@ export function ResourcesFeature() {
                   <TableCell colSpan={6} className='h-40 text-center'>
                     <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
                       <FolderOpen className='h-8 w-8 text-muted-foreground/50' />
-                      <p className='font-medium text-foreground'>No session PDFs found</p>
+                      <p className='font-medium text-foreground'>
+                        No session PDFs found
+                      </p>
                       <p className='text-xs text-muted-foreground'>
-                        Upload your PDF notes to make them available for enrolled students.
+                        Upload your PDF notes to make them available for
+                        enrolled students.
                       </p>
                     </div>
                   </TableCell>
@@ -650,12 +699,20 @@ export function ResourcesFeature() {
               ) : (
                 resources.map((res) => {
                   const isSelected = selectedIds.includes(res.id)
-                  const isVideo = res.file_type === 'video' || res.file_size === 'Video' || res.category === 'Video Lecture' || (res.file_path && res.file_path.startsWith('http'))
+                  const isVideo =
+                    res.file_type === 'video' ||
+                    res.file_size === 'Video' ||
+                    res.category === 'Video Lecture' ||
+                    (res.file_path && res.file_path.startsWith('http'))
 
                   return (
                     <TableRow
                       key={res.id}
-                      className={isSelected ? 'bg-primary/5 hover:bg-primary/10' : undefined}
+                      className={
+                        isSelected
+                          ? 'bg-primary/5 hover:bg-primary/10'
+                          : undefined
+                      }
                     >
                       {/* Checkbox */}
                       <TableCell>
@@ -663,7 +720,9 @@ export function ResourcesFeature() {
                           type='checkbox'
                           className='rounded border-gray-300'
                           checked={isSelected}
-                          onChange={(e) => handleSelectOne(res.id, e.target.checked)}
+                          onChange={(e) =>
+                            handleSelectOne(res.id, e.target.checked)
+                          }
                         />
                       </TableCell>
 
@@ -671,25 +730,31 @@ export function ResourcesFeature() {
                       <TableCell>
                         <div className='flex items-start gap-3'>
                           {isVideo ? (
-                            <div className='p-2 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5 flex-shrink-0' title='Video Lecture'>
+                            <div
+                              className='mt-0.5 flex-shrink-0 rounded-lg bg-purple-500/10 p-2 text-purple-400'
+                              title='Video Lecture'
+                            >
                               <Video className='h-5 w-5' />
                             </div>
                           ) : (
-                            <div className='p-2 rounded-lg bg-red-500/10 text-red-500 mt-0.5 flex-shrink-0' title='PDF Document'>
+                            <div
+                              className='mt-0.5 flex-shrink-0 rounded-lg bg-red-500/10 p-2 text-red-500'
+                              title='PDF Document'
+                            >
                               <FileText className='h-5 w-5' />
                             </div>
                           )}
                           <div>
-                            <p className='font-semibold text-foreground text-sm line-clamp-1'>
+                            <p className='line-clamp-1 text-sm font-semibold text-foreground'>
                               {res.title}
                             </p>
-                            <div className='flex items-center gap-2 mt-0.5'>
+                            <div className='mt-0.5 flex items-center gap-2'>
                               {res.recorded_session && (
                                 <span className='text-xs text-muted-foreground'>
                                   {res.recorded_session.title}
                                 </span>
                               )}
-                              <span className='text-[11px] text-muted-foreground font-mono'>
+                              <span className='font-mono text-[11px] text-muted-foreground'>
                                 • {res.file_name}
                               </span>
                             </div>
@@ -700,11 +765,17 @@ export function ResourcesFeature() {
                       {/* Section Heading */}
                       <TableCell>
                         {res.resource_section ? (
-                          <Badge variant='secondary' className='text-xs py-0.5 px-2 font-normal bg-purple-500/10 text-purple-400 border border-purple-500/20'>
+                          <Badge
+                            variant='outline'
+                            className='px-2 py-0.5 text-xs font-normal text-muted-foreground'
+                          >
                             {res.resource_section.title}
                           </Badge>
                         ) : (
-                          <Badge variant='outline' className='text-xs py-0.5 px-2 font-normal text-muted-foreground'>
+                          <Badge
+                            variant='outline'
+                            className='px-2 py-0.5 text-xs font-normal text-muted-foreground'
+                          >
                             General
                           </Badge>
                         )}
@@ -713,11 +784,17 @@ export function ResourcesFeature() {
                       {/* File Size */}
                       <TableCell>
                         {isVideo ? (
-                          <Badge variant='outline' className='text-xs font-medium py-0.5 px-2 text-purple-400 border-purple-500/30 bg-purple-500/10'>
+                          <Badge
+                            variant='outline'
+                            className='border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-400'
+                          >
                             Video Lecture
                           </Badge>
                         ) : (
-                          <Badge variant='outline' className='text-xs font-mono py-0 text-muted-foreground'>
+                          <Badge
+                            variant='outline'
+                            className='py-0 font-mono text-xs text-muted-foreground'
+                          >
                             {res.file_size || 'PDF'}
                           </Badge>
                         )}
@@ -740,7 +817,7 @@ export function ResourcesFeature() {
                               download={res.file_name || 'resource.pdf'}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition'
+                              className='inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground'
                               title='Download PDF'
                             >
                               <Download className='h-4 w-4' />
@@ -751,7 +828,7 @@ export function ResourcesFeature() {
                               href={res.file_url}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition'
+                              className='inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground'
                               title='View PDF'
                             >
                               <Eye className='h-4 w-4' />
@@ -795,7 +872,7 @@ export function ResourcesFeature() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className='p-4 border-t'>
+            <div className='border-t p-4'>
               <PaginationBar
                 currentPage={page}
                 totalPages={totalPages}
@@ -813,10 +890,17 @@ export function ResourcesFeature() {
             <form onSubmit={handleSubmitForm}>
               <DialogHeader>
                 <DialogTitle>
-                  {editingItem ? (formResourceType === 'video' ? 'Edit Video Lecture' : 'Edit Resource PDF') : (formResourceType === 'video' ? 'Add Video Lecture' : 'Upload Resource PDF')}
+                  {editingItem
+                    ? formResourceType === 'video'
+                      ? 'Edit Video Lecture'
+                      : 'Edit Resource PDF'
+                    : formResourceType === 'video'
+                      ? 'Add Video Lecture'
+                      : 'Upload Resource PDF'}
                 </DialogTitle>
                 <DialogDescription>
-                  Add a chapter video lecture or upload a PDF document for this masterclass section.
+                  Add a chapter video lecture or upload a PDF document for this
+                  masterclass section.
                 </DialogDescription>
               </DialogHeader>
 
@@ -824,7 +908,8 @@ export function ResourcesFeature() {
                 {/* 1. Select Recorded Session (Required) */}
                 <div className='grid gap-2'>
                   <Label htmlFor='session' className='font-semibold'>
-                    Recorded Session / Masterclass <span className='text-destructive'>*</span>
+                    Recorded Session / Masterclass{' '}
+                    <span className='text-destructive'>*</span>
                   </Label>
                   <Select
                     value={formRecordedSessionId}
@@ -857,7 +942,7 @@ export function ResourcesFeature() {
                           setIsFormOpen(false)
                           handleOpenManageSections(formRecordedSessionId)
                         }}
-                        className='text-xs text-primary hover:underline font-medium'
+                        className='text-xs font-medium text-primary hover:underline'
                       >
                         + Manage Sections
                       </button>
@@ -869,7 +954,13 @@ export function ResourcesFeature() {
                     disabled={!formRecordedSessionId || loadingFormSections}
                   >
                     <SelectTrigger id='section'>
-                      <SelectValue placeholder={loadingFormSections ? 'Loading sections...' : 'General (No Section)'} />
+                      <SelectValue
+                        placeholder={
+                          loadingFormSections
+                            ? 'Loading sections...'
+                            : 'General (No Section)'
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='none'>General / No Section</SelectItem>
@@ -881,35 +972,25 @@ export function ResourcesFeature() {
                     </SelectContent>
                   </Select>
                   <p className='text-[11px] text-muted-foreground'>
-                    Organizes this PDF under an accordion group on the student portal.
+                    Organizes this PDF under an accordion group on the student
+                    portal.
                   </p>
                 </div>
 
                 {/* Resource Type Selection */}
                 <div className='grid gap-1.5'>
-                  <Label className='font-semibold text-xs'>Resource Type</Label>
-                  <div className='grid grid-cols-2 gap-3'>
+                  <Label className='text-xs font-semibold'>Resource Type</Label>
+                  <div className='grid grid-cols-1 gap-3'>
                     <button
                       type='button'
                       onClick={() => setFormResourceType('pdf')}
-                      className={`p-2.5 rounded-lg border flex items-center justify-center gap-2 text-xs font-semibold transition ${
+                      className={`flex items-center justify-center gap-2 rounded-lg border p-2.5 text-xs font-semibold transition ${
                         formResourceType === 'pdf'
                           ? 'border-red-500 bg-red-500/10 text-red-500'
                           : 'border-border bg-card text-muted-foreground hover:bg-muted'
                       }`}
                     >
                       <FileText className='size-3.5' /> PDF Document (.pdf)
-                    </button>
-                    <button
-                      type='button'
-                      onClick={() => setFormResourceType('video')}
-                      className={`p-2.5 rounded-lg border flex items-center justify-center gap-2 text-xs font-semibold transition ${
-                        formResourceType === 'video'
-                          ? 'border-purple-500 bg-purple-500/10 text-purple-400'
-                          : 'border-border bg-card text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <Video className='size-3.5' /> Video Lecture (URL)
                     </button>
                   </div>
                 </div>
@@ -930,8 +1011,13 @@ export function ResourcesFeature() {
 
                 {formResourceType === 'video' ? (
                   <div className='grid gap-2'>
-                    <Label htmlFor='videoUrl' className='font-semibold flex items-center gap-1.5'>
-                      <Video className='size-4 text-purple-400' /> Video URL (YouTube, Vimeo, MP4) <span className='text-destructive'>*</span>
+                    <Label
+                      htmlFor='videoUrl'
+                      className='flex items-center gap-1.5 font-semibold'
+                    >
+                      <Video className='size-4 text-purple-400' /> Video URL
+                      (YouTube, Vimeo, MP4){' '}
+                      <span className='text-destructive'>*</span>
                     </Label>
                     <Input
                       id='videoUrl'
@@ -941,16 +1027,22 @@ export function ResourcesFeature() {
                       required
                     />
                     <p className='text-[11px] text-muted-foreground'>
-                      Enrolled students will be able to watch this video lesson directly in this chapter/section.
+                      Enrolled students will be able to watch this video lesson
+                      directly in this chapter/section.
                     </p>
                   </div>
                 ) : (
                   <div className='grid gap-2'>
                     <div className='flex items-center justify-between'>
                       <Label htmlFor='file' className='font-semibold'>
-                        PDF File {editingItem ? '(Leave blank to keep current)' : <span className='text-destructive'>*</span>}
+                        PDF File{' '}
+                        {editingItem ? (
+                          '(Leave blank to keep current)'
+                        ) : (
+                          <span className='text-destructive'>*</span>
+                        )}
                       </Label>
-                      <span className='text-xs text-muted-foreground font-medium'>
+                      <span className='text-xs font-medium text-muted-foreground'>
                         PDF only, Max 20 MB
                       </span>
                     </div>
@@ -962,17 +1054,20 @@ export function ResourcesFeature() {
                       required={!editingItem}
                     />
                     {editingItem && editingItem.file_name && !resourceFile && (
-                      <p className='text-xs text-muted-foreground font-mono'>
-                        Current PDF: {editingItem.file_name} ({editingItem.file_size})
+                      <p className='font-mono text-xs text-muted-foreground'>
+                        Current PDF: {editingItem.file_name} (
+                        {editingItem.file_size})
                       </p>
                     )}
                   </div>
                 )}
 
                 {/* 5. Active Switch */}
-                <div className='flex items-center justify-between p-3 rounded-lg border bg-muted/20'>
+                <div className='flex items-center justify-between rounded-lg border bg-muted/20 p-3'>
                   <div>
-                    <Label className='text-xs font-semibold'>Visible to Enrolled Students</Label>
+                    <Label className='text-xs font-semibold'>
+                      Visible to Enrolled Students
+                    </Label>
                     <p className='text-[11px] text-muted-foreground'>
                       {formIsActive ? 'Active & Downloadable' : 'Hidden'}
                     </p>
@@ -1011,14 +1106,17 @@ export function ResourcesFeature() {
                 <span>Manage Course Resource Sections</span>
               </DialogTitle>
               <DialogDescription>
-                Create and organize accordion headings (e.g. &quot;01. HTML Basics&quot;) for this masterclass.
+                Create and organize accordion headings (e.g. &quot;01. HTML
+                Basics&quot;) for this masterclass.
               </DialogDescription>
             </DialogHeader>
 
             <div className='space-y-4 py-2'>
               {/* Select Session */}
               <div className='grid gap-2'>
-                <Label className='font-semibold text-xs'>Recorded Session</Label>
+                <Label className='text-xs font-semibold'>
+                  Recorded Session
+                </Label>
                 <Select
                   value={sectionSessionId}
                   onValueChange={(val) => {
@@ -1040,9 +1138,13 @@ export function ResourcesFeature() {
               </div>
 
               {/* Add New Section Form */}
-              <form onSubmit={handleCreateSection} className='p-3.5 rounded-lg border bg-muted/20 space-y-3'>
-                <p className='text-xs font-semibold text-foreground flex items-center gap-1.5'>
-                  <Plus className='h-3.5 w-3.5 text-primary' /> Add New Section Heading
+              <form
+                onSubmit={handleCreateSection}
+                className='space-y-3 rounded-lg border bg-muted/20 p-3.5'
+              >
+                <p className='flex items-center gap-1.5 text-xs font-semibold text-foreground'>
+                  <Plus className='h-3.5 w-3.5 text-primary' /> Add New Section
+                  Heading
                 </p>
                 <div className='grid gap-2'>
                   <Input
@@ -1066,10 +1168,16 @@ export function ResourcesFeature() {
                   <Button
                     type='submit'
                     size='sm'
-                    disabled={isSavingSection || !sectionSessionId || !newSectionTitle.trim()}
+                    disabled={
+                      isSavingSection ||
+                      !sectionSessionId ||
+                      !newSectionTitle.trim()
+                    }
                     className='gap-1.5'
                   >
-                    {isSavingSection && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
+                    {isSavingSection && (
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                    )}
                     Save Section
                   </Button>
                 </div>
@@ -1077,44 +1185,52 @@ export function ResourcesFeature() {
 
               {/* Existing Sections List */}
               <div className='space-y-2'>
-                <Label className='font-semibold text-xs'>
+                <Label className='text-xs font-semibold'>
                   Existing Sections ({sections.length})
                 </Label>
                 {loadingSections ? (
-                  <div className='text-center py-6 text-muted-foreground text-xs flex items-center justify-center gap-2'>
-                    <Loader2 className='h-4 w-4 animate-spin text-primary' /> Loading sections...
+                  <div className='flex items-center justify-center gap-2 py-6 text-center text-xs text-muted-foreground'>
+                    <Loader2 className='h-4 w-4 animate-spin text-primary' />{' '}
+                    Loading sections...
                   </div>
                 ) : sections.length === 0 ? (
-                  <div className='text-center py-6 text-muted-foreground text-xs border rounded-lg border-dashed'>
-                    No sections added for this session yet. Create your first heading above.
+                  <div className='rounded-lg border border-dashed py-6 text-center text-xs text-muted-foreground'>
+                    No sections added for this session yet. Create your first
+                    heading above.
                   </div>
                 ) : (
-                  <div className='space-y-2 max-h-[280px] overflow-y-auto pr-1'>
+                  <div className='max-h-[280px] space-y-2 overflow-y-auto pr-1'>
                     {sections.map((sec, idx) => (
                       <div
                         key={sec.id}
-                        className='p-3 rounded-lg border bg-card flex items-center justify-between gap-3 text-sm'
+                        className='flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm'
                       >
                         {editingSectionId === sec.id ? (
                           <div className='flex-1 space-y-2'>
                             <Input
                               value={editingSectionTitle}
-                              onChange={(e) => setEditingSectionTitle(e.target.value)}
+                              onChange={(e) =>
+                                setEditingSectionTitle(e.target.value)
+                              }
                               placeholder='Section title'
                               className='h-8 text-xs'
                             />
                             <Input
                               value={editingSectionDesc}
-                              onChange={(e) => setEditingSectionDesc(e.target.value)}
+                              onChange={(e) =>
+                                setEditingSectionDesc(e.target.value)
+                              }
                               placeholder='Optional description'
                             />
                             <Input
                               value={editingSectionVideoUrl}
-                              onChange={(e) => setEditingSectionVideoUrl(e.target.value)}
+                              onChange={(e) =>
+                                setEditingSectionVideoUrl(e.target.value)
+                              }
                               placeholder='Section Video URL (YouTube, Vimeo, MP4) — Optional'
                               className='h-8 text-xs'
                             />
-                            <div className='flex items-center gap-2 justify-end'>
+                            <div className='flex items-center justify-end gap-2'>
                               <Button
                                 size='sm'
                                 variant='ghost'
@@ -1135,31 +1251,37 @@ export function ResourcesFeature() {
                           </div>
                         ) : (
                           <>
-                            <div className='flex items-center gap-2.5 min-w-0'>
-                              <span className='font-mono text-xs text-muted-foreground font-semibold'>
+                            <div className='flex min-w-0 items-center gap-2.5'>
+                              <span className='font-mono text-xs font-semibold text-muted-foreground'>
                                 {String(idx + 1).padStart(2, '0')}.
                               </span>
                               <div className='min-w-0'>
-                                <p className='font-medium text-foreground text-xs truncate'>
+                                <p className='truncate text-xs font-medium text-foreground'>
                                   {sec.title}
                                 </p>
                                 {sec.description && (
-                                  <p className='text-[11px] text-muted-foreground truncate'>
+                                  <p className='truncate text-[11px] text-muted-foreground'>
                                     {sec.description}
                                   </p>
                                 )}
                               </div>
-                              <Badge variant='outline' className='text-[10px] py-0 px-1.5 font-mono text-muted-foreground ml-1'>
+                              <Badge
+                                variant='outline'
+                                className='ml-1 px-1.5 py-0 font-mono text-[10px] text-muted-foreground'
+                              >
                                 {sec.total_files || 0} PDFs
                               </Badge>
                               {sec.video_url && (
-                                <Badge variant='outline' className='text-[10px] py-0 px-1.5 text-primary border-primary/30 ml-1 flex items-center gap-1'>
+                                <Badge
+                                  variant='outline'
+                                  className='ml-1 flex items-center gap-1 border-primary/30 px-1.5 py-0 text-[10px] text-primary'
+                                >
                                   <Video className='h-2.5 w-2.5' /> Video
                                 </Badge>
                               )}
                             </div>
 
-                            <div className='flex items-center gap-1 flex-shrink-0'>
+                            <div className='flex flex-shrink-0 items-center gap-1'>
                               <Button
                                 size='icon'
                                 variant='ghost'
@@ -1194,7 +1316,10 @@ export function ResourcesFeature() {
             </div>
 
             <DialogFooter>
-              <Button variant='outline' onClick={() => setIsSectionModalOpen(false)}>
+              <Button
+                variant='outline'
+                onClick={() => setIsSectionModalOpen(false)}
+              >
                 Done
               </Button>
             </DialogFooter>
@@ -1202,7 +1327,10 @@ export function ResourcesFeature() {
         </Dialog>
 
         {/* View Resource Details Modal */}
-        <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
+        <Dialog
+          open={!!viewItem}
+          onOpenChange={(open) => !open && setViewItem(null)}
+        >
           <DialogContent className='sm:max-w-[460px]'>
             <DialogHeader>
               <DialogTitle className='flex items-center gap-2'>
@@ -1215,40 +1343,67 @@ export function ResourcesFeature() {
               <div className='space-y-4 py-2 text-sm'>
                 <div>
                   <p className='text-xs text-muted-foreground'>Title</p>
-                  <p className='font-semibold text-base mt-0.5'>{viewItem.title}</p>
+                  <p className='mt-0.5 text-base font-semibold'>
+                    {viewItem.title}
+                  </p>
                 </div>
 
                 <div>
-                  <p className='text-xs text-muted-foreground'>Linked Masterclass</p>
-                  <p className='font-medium mt-0.5'>
-                    {viewItem.recorded_session?.title || viewItem.session?.title || 'None'}
+                  <p className='text-xs text-muted-foreground'>
+                    Linked Masterclass
+                  </p>
+                  <p className='mt-0.5 font-medium'>
+                    {viewItem.recorded_session?.title ||
+                      viewItem.session?.title ||
+                      'None'}
                   </p>
                 </div>
 
                 {viewItem.resource_section && (
                   <div>
-                    <p className='text-xs text-muted-foreground'>Section Heading</p>
-                    <p className='font-medium mt-0.5 text-purple-400'>
+                    <p className='text-xs text-muted-foreground'>
+                      Section Heading
+                    </p>
+                    <p className='mt-0.5 font-medium text-purple-400'>
                       {viewItem.resource_section.title}
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <p className='text-xs text-muted-foreground'>File Name &amp; Size</p>
-                  <p className='font-mono text-xs mt-0.5 line-clamp-1'>{viewItem.file_name}</p>
-                  <p className='text-xs text-muted-foreground uppercase mt-0.5'>PDF • {viewItem.file_size}</p>
+                  <p className='text-xs text-muted-foreground'>
+                    File Name &amp; Size
+                  </p>
+                  <p className='mt-0.5 line-clamp-1 font-mono text-xs'>
+                    {viewItem.file_name}
+                  </p>
+                  <p className='mt-0.5 text-xs text-muted-foreground uppercase'>
+                    PDF • {viewItem.file_size}
+                  </p>
                 </div>
 
-                <div className='pt-2 flex justify-end gap-2'>
+                <div className='flex justify-end gap-2 pt-2'>
                   {viewItem.file_url && (
-                    <Button asChild variant='default' size='sm' className='gap-1.5'>
-                      <a href={viewItem.file_url} target='_blank' rel='noopener noreferrer'>
+                    <Button
+                      asChild
+                      variant='default'
+                      size='sm'
+                      className='gap-1.5'
+                    >
+                      <a
+                        href={viewItem.file_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
                         <Download className='h-4 w-4' /> Download PDF
                       </a>
                     </Button>
                   )}
-                  <Button variant='outline' size='sm' onClick={() => setViewItem(null)}>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setViewItem(null)}
+                  >
                     Close
                   </Button>
                 </div>
