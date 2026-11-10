@@ -1099,7 +1099,7 @@ export function ResourcesFeature() {
 
         {/* Manage Resource Sections Modal */}
         <Dialog open={isSectionModalOpen} onOpenChange={setIsSectionModalOpen}>
-          <DialogContent className='sm:max-w-[620px]'>
+          <DialogContent className='sm:max-w-[620px] max-h-[90vh] overflow-y-auto overflow-x-hidden'>
             <DialogHeader>
               <DialogTitle className='flex items-center gap-2'>
                 <Layers className='h-5 w-5 text-primary' />
@@ -1111,7 +1111,7 @@ export function ResourcesFeature() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className='space-y-4 py-2'>
+            <div className='space-y-4 py-2 min-w-0 w-full'>
               {/* Select Session */}
               <div className='grid gap-2'>
                 <Label className='text-xs font-semibold'>
@@ -1140,7 +1140,7 @@ export function ResourcesFeature() {
               {/* Add New Section Form */}
               <form
                 onSubmit={handleCreateSection}
-                className='space-y-3 rounded-lg border bg-muted/20 p-3.5'
+                className='space-y-3 rounded-lg border bg-muted/20 p-3.5 min-w-0 w-full'
               >
                 <p className='flex items-center gap-1.5 text-xs font-semibold text-foreground'>
                   <Plus className='h-3.5 w-3.5 text-primary' /> Add New Section
@@ -1184,7 +1184,7 @@ export function ResourcesFeature() {
               </form>
 
               {/* Existing Sections List */}
-              <div className='space-y-2'>
+              <div className='space-y-2 min-w-0 w-full'>
                 <Label className='text-xs font-semibold'>
                   Existing Sections ({sections.length})
                 </Label>
@@ -1199,14 +1199,14 @@ export function ResourcesFeature() {
                     heading above.
                   </div>
                 ) : (
-                  <div className='max-h-[280px] space-y-2 overflow-y-auto pr-1'>
+                  <div className='max-h-[280px] space-y-2 overflow-y-auto pr-1 min-w-0 w-full'>
                     {sections.map((sec, idx) => (
                       <div
                         key={sec.id}
-                        className='flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm'
+                        className='flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm min-w-0 w-full'
                       >
                         {editingSectionId === sec.id ? (
-                          <div className='flex-1 space-y-2'>
+                          <div className='flex-1 space-y-2 min-w-0'>
                             <Input
                               value={editingSectionTitle}
                               onChange={(e) =>
@@ -1251,37 +1251,45 @@ export function ResourcesFeature() {
                           </div>
                         ) : (
                           <>
-                            <div className='flex min-w-0 items-center gap-2.5'>
-                              <span className='font-mono text-xs font-semibold text-muted-foreground'>
+                            <div className='flex min-w-0 flex-1 items-center gap-2.5'>
+                              <span className='font-mono text-xs font-semibold text-muted-foreground shrink-0'>
                                 {String(idx + 1).padStart(2, '0')}.
                               </span>
-                              <div className='min-w-0'>
-                                <p className='truncate text-xs font-medium text-foreground'>
+                              <div className='min-w-0 flex-1'>
+                                <p
+                                  className='truncate text-xs font-medium text-foreground'
+                                  title={sec.title}
+                                >
                                   {sec.title}
                                 </p>
                                 {sec.description && (
-                                  <p className='truncate text-[11px] text-muted-foreground'>
+                                  <p
+                                    className='truncate text-[11px] text-muted-foreground'
+                                    title={sec.description}
+                                  >
                                     {sec.description}
                                   </p>
                                 )}
                               </div>
-                              <Badge
-                                variant='outline'
-                                className='ml-1 px-1.5 py-0 font-mono text-[10px] text-muted-foreground'
-                              >
-                                {sec.total_files || 0} PDFs
-                              </Badge>
-                              {sec.video_url && (
+                              <div className='flex items-center gap-1.5 shrink-0'>
                                 <Badge
                                   variant='outline'
-                                  className='ml-1 flex items-center gap-1 border-primary/30 px-1.5 py-0 text-[10px] text-primary'
+                                  className='px-1.5 py-0 font-mono text-[10px] text-muted-foreground'
                                 >
-                                  <Video className='h-2.5 w-2.5' /> Video
+                                  {sec.total_files || 0} PDFs
                                 </Badge>
-                              )}
+                                {sec.video_url && (
+                                  <Badge
+                                    variant='outline'
+                                    className='flex items-center gap-1 border-primary/30 px-1.5 py-0 text-[10px] text-primary'
+                                  >
+                                    <Video className='h-2.5 w-2.5' /> Video
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
 
-                            <div className='flex flex-shrink-0 items-center gap-1'>
+                            <div className='flex shrink-0 items-center gap-1'>
                               <Button
                                 size='icon'
                                 variant='ghost'
@@ -1315,7 +1323,7 @@ export function ResourcesFeature() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className='w-full'>
               <Button
                 variant='outline'
                 onClick={() => setIsSectionModalOpen(false)}
