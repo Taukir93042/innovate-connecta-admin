@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowRight, CheckCircle2, Loader2, ShieldAlert } from 'lucide-react'
+import { toast } from 'sonner'
 import { adminAuthService } from '@/services/admin-auth'
 import { getApiErrorMessage } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
@@ -47,17 +48,19 @@ export function ForgotPasswordForm({
       })
 
       setIsSuccess(true)
-      setSuccessMessage(
+      const successMsg =
         response.message ||
-          'If this email is registered, you will receive a password reset link shortly.'
-      )
+        'A 6-digit verification OTP has been sent to your registered email address.'
+      setSuccessMessage(successMsg)
+      toast.success(successMsg)
       form.reset()
     } catch (err: unknown) {
       const msg = getApiErrorMessage(
         err,
-        'Unable to send reset link. Please try again later.'
+        'Please enter a valid registered email address.'
       )
       setErrorMessage(msg)
+      toast.error(msg)
     } finally {
       setIsLoading(false)
     }
@@ -132,11 +135,11 @@ export function ForgotPasswordForm({
           {isLoading ? (
             <>
               <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-              Sending Link...
+              Sending OTP...
             </>
           ) : (
             <>
-              Send Reset Link
+              Get Verification OTP
               <ArrowRight className='ml-2 h-4 w-4' />
             </>
           )}

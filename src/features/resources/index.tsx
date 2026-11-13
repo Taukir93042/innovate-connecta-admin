@@ -916,7 +916,7 @@ export function ResourcesFeature() {
                     onValueChange={handleSessionSelect}
                     required
                   >
-                    <SelectTrigger id='session'>
+                    <SelectTrigger id='session' className='w-full'>
                       <SelectValue placeholder='Select Recorded Session' />
                     </SelectTrigger>
                     <SelectContent>
@@ -953,7 +953,7 @@ export function ResourcesFeature() {
                     onValueChange={setFormSectionId}
                     disabled={!formRecordedSessionId || loadingFormSections}
                   >
-                    <SelectTrigger id='section'>
+                    <SelectTrigger id='section' className='w-full'>
                       <SelectValue
                         placeholder={
                           loadingFormSections
@@ -1099,8 +1099,8 @@ export function ResourcesFeature() {
 
         {/* Manage Resource Sections Modal */}
         <Dialog open={isSectionModalOpen} onOpenChange={setIsSectionModalOpen}>
-          <DialogContent className='sm:max-w-[620px] max-h-[90vh] overflow-y-auto overflow-x-hidden'>
-            <DialogHeader>
+          <DialogContent className='sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
+            <DialogHeader className='shrink-0'>
               <DialogTitle className='flex items-center gap-2'>
                 <Layers className='h-5 w-5 text-primary' />
                 <span>Manage Course Resource Sections</span>
@@ -1111,9 +1111,9 @@ export function ResourcesFeature() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className='space-y-4 py-2 min-w-0 w-full'>
+            <div className='flex-1 overflow-y-auto space-y-4 py-2 min-w-0 w-full pr-1'>
               {/* Select Session */}
-              <div className='grid gap-2'>
+              <div className='grid gap-2 min-w-0 w-full'>
                 <Label className='text-xs font-semibold'>
                   Recorded Session
                 </Label>
@@ -1124,7 +1124,7 @@ export function ResourcesFeature() {
                     fetchSectionsForManage(val)
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className='w-full'>
                     <SelectValue placeholder='Select Recorded Session' />
                   </SelectTrigger>
                   <SelectContent>
@@ -1146,22 +1146,25 @@ export function ResourcesFeature() {
                   <Plus className='h-3.5 w-3.5 text-primary' /> Add New Section
                   Heading
                 </p>
-                <div className='grid gap-2'>
+                <div className='grid gap-2 min-w-0 w-full'>
                   <Input
                     placeholder='Section Title (e.g. 01. Course Notes & Study Material)'
                     value={newSectionTitle}
                     onChange={(e) => setNewSectionTitle(e.target.value)}
                     required
+                    className='w-full'
                   />
                   <Input
                     placeholder='Optional short description (e.g. Comprehensive guide & quick revision)'
                     value={newSectionDesc}
                     onChange={(e) => setNewSectionDesc(e.target.value)}
+                    className='w-full'
                   />
                   <Input
                     placeholder='Section Video URL (YouTube, Vimeo, MP4) — e.g. https://youtu.be/...'
                     value={newSectionVideoUrl}
                     onChange={(e) => setNewSectionVideoUrl(e.target.value)}
+                    className='w-full'
                   />
                 </div>
                 <div className='flex justify-end'>
@@ -1199,21 +1202,21 @@ export function ResourcesFeature() {
                     heading above.
                   </div>
                 ) : (
-                  <div className='max-h-[280px] space-y-2 overflow-y-auto pr-1 min-w-0 w-full'>
+                  <div className='space-y-2 min-w-0 w-full'>
                     {sections.map((sec, idx) => (
                       <div
                         key={sec.id}
-                        className='flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm min-w-0 w-full'
+                        className='flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm min-w-0 w-full overflow-hidden'
                       >
                         {editingSectionId === sec.id ? (
-                          <div className='flex-1 space-y-2 min-w-0'>
+                          <div className='flex-1 space-y-2 min-w-0 w-full'>
                             <Input
                               value={editingSectionTitle}
                               onChange={(e) =>
                                 setEditingSectionTitle(e.target.value)
                               }
                               placeholder='Section title'
-                              className='h-8 text-xs'
+                              className='h-8 text-xs w-full'
                             />
                             <Input
                               value={editingSectionDesc}
@@ -1221,6 +1224,7 @@ export function ResourcesFeature() {
                                 setEditingSectionDesc(e.target.value)
                               }
                               placeholder='Optional description'
+                              className='w-full'
                             />
                             <Input
                               value={editingSectionVideoUrl}
@@ -1228,7 +1232,7 @@ export function ResourcesFeature() {
                                 setEditingSectionVideoUrl(e.target.value)
                               }
                               placeholder='Section Video URL (YouTube, Vimeo, MP4) — Optional'
-                              className='h-8 text-xs'
+                              className='h-8 text-xs w-full'
                             />
                             <div className='flex items-center justify-end gap-2'>
                               <Button
@@ -1251,11 +1255,11 @@ export function ResourcesFeature() {
                           </div>
                         ) : (
                           <>
-                            <div className='flex min-w-0 flex-1 items-center gap-2.5'>
+                            <div className='flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden'>
                               <span className='font-mono text-xs font-semibold text-muted-foreground shrink-0'>
                                 {String(idx + 1).padStart(2, '0')}.
                               </span>
-                              <div className='min-w-0 flex-1'>
+                              <div className='min-w-0 flex-1 overflow-hidden'>
                                 <p
                                   className='truncate text-xs font-medium text-foreground'
                                   title={sec.title}
@@ -1274,14 +1278,14 @@ export function ResourcesFeature() {
                               <div className='flex items-center gap-1.5 shrink-0'>
                                 <Badge
                                   variant='outline'
-                                  className='px-1.5 py-0 font-mono text-[10px] text-muted-foreground'
+                                  className='px-1.5 py-0 font-mono text-[10px] text-muted-foreground whitespace-nowrap'
                                 >
                                   {sec.total_files || 0} PDFs
                                 </Badge>
                                 {sec.video_url && (
                                   <Badge
                                     variant='outline'
-                                    className='flex items-center gap-1 border-primary/30 px-1.5 py-0 text-[10px] text-primary'
+                                    className='flex items-center gap-1 border-primary/30 px-1.5 py-0 text-[10px] text-primary whitespace-nowrap'
                                   >
                                     <Video className='h-2.5 w-2.5' /> Video
                                   </Badge>
@@ -1323,7 +1327,7 @@ export function ResourcesFeature() {
               </div>
             </div>
 
-            <DialogFooter className='w-full'>
+            <DialogFooter className='shrink-0 w-full pt-2 border-t'>
               <Button
                 variant='outline'
                 onClick={() => setIsSectionModalOpen(false)}
