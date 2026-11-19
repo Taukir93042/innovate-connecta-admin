@@ -186,7 +186,7 @@ export function SessionDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/<[a-z][sS]*>/i.test(session.section_one_content) ? (
+                {session.section_one_content ? (
                   <div
                     className='prose prose-sm dark:prose-invert max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-6'
                     dangerouslySetInnerHTML={{
@@ -194,8 +194,8 @@ export function SessionDetail() {
                     }}
                   />
                 ) : (
-                  <div className='text-sm leading-relaxed whitespace-pre-line text-foreground/90'>
-                    {session.section_one_content}
+                  <div className='text-sm leading-relaxed text-muted-foreground italic'>
+                    No content provided.
                   </div>
                 )}
               </CardContent>
@@ -214,18 +214,12 @@ export function SessionDetail() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/<[a-z][sS]*>/i.test(session.section_two_content) ? (
-                    <div
-                      className='prose prose-sm dark:prose-invert max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-6'
-                      dangerouslySetInnerHTML={{
-                        __html: session.section_two_content,
-                      }}
-                    />
-                  ) : (
-                    <div className='text-sm leading-relaxed whitespace-pre-line text-foreground/90'>
-                      {session.section_two_content}
-                    </div>
-                  )}
+                  <div
+                    className='prose prose-sm dark:prose-invert max-w-none leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:w-full [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc [&_ul]:pl-6'
+                    dangerouslySetInnerHTML={{
+                      __html: session.section_two_content,
+                    }}
+                  />
                 </CardContent>
               </Card>
             )}
