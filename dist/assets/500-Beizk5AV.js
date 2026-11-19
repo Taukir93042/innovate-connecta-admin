@@ -1,0 +1,1 @@
+import{i as e}from"./index-DuCdtGid.js";var t=e;export{t as component};

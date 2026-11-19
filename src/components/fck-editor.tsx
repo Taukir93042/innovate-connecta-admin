@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type ClipboardEvent } from 'react'
 import {
   Bold,
   Italic,
@@ -102,6 +102,120 @@ export function FCKEditor({
     }
     updateStats(value || '')
   }, [isSourceMode])
+
+  const cleanPastedHtml = (htmlContent: string): string => {
+    try {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(htmlContent, 'text/html')
+
+      // Process all elements in the pasted markup
+      const allElements = doc.body.querySelectorAll('*')
+      allElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          // Remove unwanted pasted backgrounds & font families
+          el.style.backgroundColor = ''
+          el.style.background = ''
+          el.style.fontFamily = ''
+
+          // Remove light-theme dark text colors (so it adapts to dark/light theme)
+          const color = el.style.color?.trim().toLowerCase() || ''
+          if (
+            color === '#000' ||
+            color === '#000000' ||
+            color === '#1f1f1f' ||
+            color === '#111' ||
+            color === '#111111' ||
+            color === '#222' ||
+            color === '#222222' ||
+            color === '#333' ||
+            color === '#333333' ||
+            color.startsWith('rgb(0,') ||
+            color.startsWith('rgb(31,') ||
+            color.startsWith('rgba(0,') ||
+            color.startsWith('rgba(31,')
+          ) {
+            el.style.color = ''
+          }
+
+          if (!el.getAttribute('style') || el.getAttribute('style')?.trim() === '') {
+            el.removeAttribute('style')
+          }
+        }
+
+        // Clean <font> tags
+        if (el.tagName.toLowerCase() === 'font') {
+          el.removeAttribute('face')
+          const fontColor = el.getAttribute('color')?.toLowerCase() || ''
+          if (
+            fontColor === '#000' ||
+            fontColor === '#000000' ||
+            fontColor === '#1f1f1f' ||
+            fontColor === '#111' ||
+            fontColor === '#222' ||
+            fontColor === '#333' ||
+            fontColor === '#333333'
+          ) {
+            el.removeAttribute('color')
+          }
+        }
+      })
+
+      return doc.body.innerHTML
+    } catch {
+      return htmlContent
+    }
+  }
+
+  const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    if (disabled || isSourceMode) return
+    e.preventDefault()
+
+    const html = e.clipboardData.getData('text/html')
+    const text = e.clipboardData.getData('text/plain')
+
+    if (html) {
+      const cleaned = cleanPastedHtml(html)
+      document.execCommand('insertHTML', false, cleaned)
+    } else if (text) {
+      document.execCommand('insertText', false, text)
+    }
+    handleEditorInput()
+  }
+
+  const handleClearFormatting = () => {
+    if (disabled || isSourceMode) return
+    editorRef.current?.focus()
+    document.execCommand('removeFormat', false, undefined)
+
+    // Also strip background and text colors from selection / children
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0)
+      const container = range.commonAncestorContainer
+      const parent =
+        container.nodeType === Node.ELEMENT_NODE
+          ? (container as HTMLElement)
+          : container.parentElement
+
+      if (parent && editorRef.current?.contains(parent)) {
+        if (parent !== editorRef.current) {
+          parent.style.backgroundColor = ''
+          parent.style.background = ''
+          parent.style.color = ''
+          parent.style.fontFamily = ''
+        }
+        parent.querySelectorAll('*').forEach((el) => {
+          if (el instanceof HTMLElement) {
+            el.style.backgroundColor = ''
+            el.style.background = ''
+            el.style.color = ''
+            el.style.fontFamily = ''
+          }
+        })
+      }
+    }
+    handleEditorInput()
+  }
 
   const executeCommand = (command: string, arg: string | undefined = undefined) => {
     if (disabled || isSourceMode) return
@@ -404,8 +518,8 @@ export function FCKEditor({
               icon={<Minus className='h-3.5 w-3.5' />}
             />
             <ToolbarButton
-              title='Clear Formatting'
-              onClick={() => executeCommand('removeFormat')}
+              title='Clear Formatting & Background'
+              onClick={handleClearFormatting}
               icon={<Eraser className='h-3.5 w-3.5' />}
             />
           </div>
@@ -434,6 +548,7 @@ export function FCKEditor({
           <div
             ref={editorRef}
             contentEditable={!disabled}
+            onPaste={handlePaste}
             onInput={handleEditorInput}
             onBlur={handleEditorInput}
             onKeyUp={handleEditorInput}

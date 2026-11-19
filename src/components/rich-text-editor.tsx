@@ -74,6 +74,79 @@ export function RichTextEditor({
     }
   }, [isHtmlMode])
 
+  const cleanPastedHtml = (htmlContent: string): string => {
+    try {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(htmlContent, 'text/html')
+
+      const allElements = doc.body.querySelectorAll('*')
+      allElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          el.style.backgroundColor = ''
+          el.style.background = ''
+          el.style.fontFamily = ''
+
+          const color = el.style.color?.trim().toLowerCase() || ''
+          if (
+            color === '#000' ||
+            color === '#000000' ||
+            color === '#1f1f1f' ||
+            color === '#111' ||
+            color === '#111111' ||
+            color === '#222' ||
+            color === '#222222' ||
+            color === '#333' ||
+            color === '#333333' ||
+            color.startsWith('rgb(0,') ||
+            color.startsWith('rgb(31,')
+          ) {
+            el.style.color = ''
+          }
+
+          if (!el.getAttribute('style') || el.getAttribute('style')?.trim() === '') {
+            el.removeAttribute('style')
+          }
+        }
+
+        if (el.tagName.toLowerCase() === 'font') {
+          el.removeAttribute('face')
+          const fontColor = el.getAttribute('color')?.toLowerCase() || ''
+          if (
+            fontColor === '#000' ||
+            fontColor === '#000000' ||
+            fontColor === '#1f1f1f' ||
+            fontColor === '#111' ||
+            fontColor === '#222' ||
+            fontColor === '#333' ||
+            fontColor === '#333333'
+          ) {
+            el.removeAttribute('color')
+          }
+        }
+      })
+
+      return doc.body.innerHTML
+    } catch {
+      return htmlContent
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    if (disabled || isHtmlMode) return
+    e.preventDefault()
+
+    const html = e.clipboardData.getData('text/html')
+    const text = e.clipboardData.getData('text/plain')
+
+    if (html) {
+      const cleaned = cleanPastedHtml(html)
+      document.execCommand('insertHTML', false, cleaned)
+    } else if (text) {
+      document.execCommand('insertText', false, text)
+    }
+    handleEditorInput()
+  }
+
   const executeCommand = (command: string, arg: string | undefined = undefined) => {
     if (disabled || isHtmlMode) return
     editorRef.current?.focus()
@@ -296,6 +369,7 @@ export function RichTextEditor({
           <div
             ref={editorRef}
             contentEditable={!disabled}
+            onPaste={handlePaste}
             onInput={handleEditorInput}
             onBlur={handleEditorInput}
             data-placeholder={placeholder}
